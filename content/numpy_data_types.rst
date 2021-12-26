@@ -54,12 +54,12 @@ For performance reasons NumPy doesn’t warn you about the overflows happening w
         >>> v[()]            # obtaining the value of the 0-dim array
         3
 
-As for NumPy scalars — they are covered by the overflow warnings:
+As for NumPy scalars — they are covered by the overflow warnings (the warning is displayed only once per session to avoid flooding the output):
 
 .. code:: python
 
         >>> np.array([2**63–1])[0] + 1
-        FloatingPointError: overflow encountered in longlong_scalars
+        RuntimeWarning: overflow encountered in longlong_scalars
 
 The reasoning behind such a discrimination is like this:
 
