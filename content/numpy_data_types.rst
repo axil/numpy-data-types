@@ -41,7 +41,7 @@ NumPy works best when the width is fixed now so unlike ordinary Python the value
         >>> np.array(2**63-1)+1    # always np.int64 because v > 2**32-1
         -9223372036854775808
 
-For performance reasons NumPy doesn’t warn you about the overflows happening with arrays — even with zero-dimensional array such as those in the example above. Speaking of zero-dimensional arrays more realistic example where you can run into them is when you iterate over a NumPy array with nditer:
+For performance reasons NumPy doesn’t warn you about the overflows happening with arrays — even with zero-dimensional array such as those in the example above. Speaking of zero-dimensional arrays a more realistic example where you can run into them is when you iterate over a NumPy array with nditer:
 
 .. code:: python
 
