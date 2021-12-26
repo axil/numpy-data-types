@@ -1,10 +1,10 @@
-Numpy Data Types
+NumPy Data Types
 ################
 
 .. image:: img/numpy-data-types/numpy_types_diagram.png
-  :alt: Numpy Types Diagram
+  :alt: NumPy Types Diagram
 
-Numpy, a python library for efficient processing of n-dimentional arrays, is pretty omnivorous when it comes to data types: it can handle just everything.
+NumPy, a python library for efficient processing of n-dimentional arrays, is pretty omnivorous when it comes to data types: it can handle just everything.
 
 It has its own set of ‘native’ types which it is capable of processing at full speed but it can also work with pretty much anything known to python.
 
@@ -22,15 +22,15 @@ Outline
 ***********
 
 .. image:: img/numpy-data-types/integers.png
-  :alt: Numpy Integer Types
+  :alt: NumPy Integer Types
 
-When you feed a python int into numpy, it gets converted into a native numpy type called np.int32 (or np.int64 depending on the OS, python version and the magnitude of the initializers).
+When you feed a python int into NumPy, it gets converted into a native NumPy type called np.int32 (or np.int64 depending on the OS, python version and the magnitude of the initializers).
 
-If you’re unhappy with the int type that numpy have chosen for you, you can specify one explicitly with np.zeros(10, np.uint8) or np.zeros(10, 'uint8').
+If you’re unhappy with the int type that NumPy have chosen for you, you can specify one explicitly with np.zeros(10, np.uint8) or np.zeros(10, 'uint8').
 
 Just like in C/C++, `u` stands for 'unsigned' and the number designates the width of the variable in bits.
 
-Numpy works best when the width is fixed now so unlike ordinary python the value will rotate when it reaches the maximum value for the corresponding data type:
+NumPy works best when the width is fixed now so unlike ordinary python the value will rotate when it reaches the maximum value for the corresponding data type:
 
 .. code:: python
 
@@ -41,7 +41,7 @@ Numpy works best when the width is fixed now so unlike ordinary python the value
         >>> np.array(2**63-1)+1    # always np.int64 because v > 2**32-1
         -9223372036854775808
 
-For performance reasons numpy doesn’t warn you about the overflows happening with arrays — even with zero-dimensional array such as those in the example above. Speaking of zero-dimensional arrays more realistic example where you can run into them is when you iterate over a numpy array with nditer:
+For performance reasons NumPy doesn’t warn you about the overflows happening with arrays — even with zero-dimensional array such as those in the example above. Speaking of zero-dimensional arrays more realistic example where you can run into them is when you iterate over a NumPy array with nditer:
 
 .. code:: python
 
@@ -54,7 +54,7 @@ For performance reasons numpy doesn’t warn you about the overflows happening w
         >>> v[()]            # obtaining the value of the 0-dim array
         3
 
-As for numpy scalars — they are covered by the overflow warnings:
+As for NumPy scalars — they are covered by the overflow warnings:
 
 .. code:: python
 
@@ -63,7 +63,7 @@ As for numpy scalars — they are covered by the overflow warnings:
 
 The reasoning behind such a discrimination is like this:
 
-    Unlike true floating point errors (where the hardware FPU sets a flag whenever it does an atomic operation that overflows), we need to implement the integer overflow detection ourselves. We do it on the scalars, but not arrays because it would be too slow to implement for every atomic operation on arrays. *Robert Kern, one of the numpy core developers*
+    Unlike true floating point errors (where the hardware FPU sets a flag whenever it does an atomic operation that overflows), we need to implement the integer overflow detection ourselves. We do it on the scalars, but not arrays because it would be too slow to implement for every atomic operation on arrays. *Robert Kern, one of the NumPy core developers*
 
 You can make it an error
 
@@ -85,9 +85,9 @@ or suppress it entirely
 
 But you can’t expect it to be detected when dealing with any arrays.
 
-Numpy also exposes a bunch of aliases (eg. np.intc=int in C, np.int_=long in C, etc) as an attempt to make the code closer to the underlying C code and thus more cross-platform. And yet some more aliases generally for internal usage (like np.intp=ssize_t in C, used in cython)
+NumPy also exposes a bunch of aliases (eg. np.intc=int in C, np.int_=long in C, etc) as an attempt to make the code closer to the underlying C code and thus more cross-platform. And yet some more aliases generally for internal usage (like np.intp=ssize_t in C, used in cython)
 
-Finally, if for some reason you need arbitrary-precision integers (python ints) in ndarrays, numpy is capable of doing it, too:
+Finally, if for some reason you need arbitrary-precision integers (python ints) in ndarrays, NumPy is capable of doing it, too:
 
 .. code:: python
 
@@ -102,9 +102,9 @@ Finally, if for some reason you need arbitrary-precision integers (python ints) 
 *********
 
 .. image:: img/numpy-data-types/floats.png
-  :alt: Numpy Floating Types
+  :alt: NumPy Floating Types
 
-As python did not diverge from IEEE 754-standardized C double type, the floattype transition from python to numpy is pretty much hassle-free:
+As python did not diverge from IEEE 754-standardized C double type, the floattype transition from python to NumPy is pretty much hassle-free:
 
 \* This is the number reported by np.finfo(np.floatnn).precision. As usual with floats, depending on what you mean by significant digits it may be 15 (FLT_DIG) or 17 (FLT_DECIMAL_DIG) for float64, etc.
 
@@ -123,7 +123,7 @@ Floats exactly represent integers below a certain level (limited by the number o
         >>> len('9279945539648888') # Don't trust the 16th decimal digit!
         16
 
-Also exactly representable are fractions like 0.5, 0.125, 0.875 where the denominator is a power of 2 (0.5=1/2, 0.125=1/8, 0.875 =7/8, etc). Any other denominator will result in a rounding error so that 0.1+0.2!=0.3. The standard approach of dealing with this problem is to compare them with a relative tolerance (to compare two non-zero arguments) and absolute tolerance (if one of the arguments is zero). For scalars it is handled by `math.isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0)`, for numpy arrays there’s a vector version `np.isclose(a, b, rtol=1e-05, atol=1e-08)`. Note that the tolerances have different names and defaults.
+Also exactly representable are fractions like 0.5, 0.125, 0.875 where the denominator is a power of 2 (0.5=1/2, 0.125=1/8, 0.875 =7/8, etc). Any other denominator will result in a rounding error so that 0.1+0.2!=0.3. The standard approach of dealing with this problem is to compare them with a relative tolerance (to compare two non-zero arguments) and absolute tolerance (if one of the arguments is zero). For scalars it is handled by `math.isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0)`, for NumPy arrays there’s a vector version `np.isclose(a, b, rtol=1e-05, atol=1e-08)`. Note that the tolerances have different names and defaults.
 
 For the financial data decimal.Decimal type is handy as it involves no additional tolerances at all:
 
@@ -151,7 +151,7 @@ For pure mathematic calculations fractions.Fraction can be used:
 
 It can represent any rational numbers, but pi and exp are out of luck )
 
-Both Decimal and Fraction are not native types for numpy but it is capable of working with them with all the niceties like multi-dimensions and fancy indexing, albeight at the cost of slower processing speed than that of native ints or floats.
+Both Decimal and Fraction are not native types for NumPy but it is capable of working with them with all the niceties like multi-dimensions and fancy indexing, albeight at the cost of slower processing speed than that of native ints or floats.
 
 Complex numbers are processed no differently than floats with extra convenience functions with intuitive names like np.real(z), np.imag(z), np.abs(z), np.angle(z) that work on both scalars and arrays as a whole.
 
@@ -172,24 +172,24 @@ The boolean values are stored as single bytes for better performance. `np.bool_`
         >>> sys.getsizeof(True)
         28
 
-np.bool is 28 times more memory efficient than python’s bool ) It real-world scenarios the rate is lower though: when you pack numpy bools into an array, they will take 1 byte each, but if you pack python bools into a list it will reference the same two values every time, costing effectively 8 bytes per element on x64.
+np.bool is 28 times more memory efficient than python’s bool ) It real-world scenarios the rate is lower though: when you pack NumPy bools into an array, they will take 1 byte each, but if you pack python bools into a list it will reference the same two values every time, costing effectively 8 bytes per element on x64.
 
-The underlines in `bool_`, `int_`, etc are there to avoid clashes with python’s types. It’s a bad idea to use reserved keywords for other things, but in this case it has an additional advantage of allowing (a generally discouraged, but useful in rare cases) from numpy import * without shadowing python bools, ints, etc. As of today, np.bool still works but displays a deprecation warning.
+The underlines in `bool_`, `int_`, etc are there to avoid clashes with python’s types. It’s a bad idea to use reserved keywords for other things, but in this case it has an additional advantage of allowing (a generally discouraged, but useful in rare cases) from NumPy import * without shadowing python bools, ints, etc. As of today, np.bool still works but displays a deprecation warning.
 
 **********
 4. Strings
 **********
 
-Initializing a numpy array with a list of python strings packs them into a fixed-width native numpy dtype called `np.str_`. Reserving a space necessary to fit the longest string for every element might look wasteful (especially in the fixed USC-4 encoding as opposed to ‘dynamic’ choice of the UTF width in python str)
+Initializing a NumPy array with a list of python strings packs them into a fixed-width native NumPy dtype called `np.str_`. Reserving a space necessary to fit the longest string for every element might look wasteful (especially in the fixed USC-4 encoding as opposed to ‘dynamic’ choice of the UTF width in python str)
 
 .. code:: python
 
         >>> np.array(['abcde', 'x', 'y', 'z'])        # 4 bytes per character
         array(['abcde', 'x', 'y', 'z'], dtype='<U5') # 5*4 bytes per element
 
-The abbreviation ‘<U4’ comes from the so called array protocol and it means ‘little-endian USC-4-encoded string, 5 elements long’ (USC-4≈UTF-32, a fixed width, 4-bytes per character encoding). Every numpy type has an abbreviation as unreadable as this one, luckily they have adopted human-readable names at least for the most used dtypes.
+The abbreviation ‘<U4’ comes from the so called array protocol and it means ‘little-endian USC-4-encoded string, 5 elements long’ (USC-4≈UTF-32, a fixed width, 4-bytes per character encoding). Every NumPy type has an abbreviation as unreadable as this one, luckily they have adopted human-readable names at least for the most used dtypes.
 
-Another option is to keep references to python strs in a numpy array of objects:
+Another option is to keep references to python strs in a NumPy array of objects:
 
 .. code:: python
 
@@ -198,7 +198,7 @@ Another option is to keep references to python strs in a numpy array of objects:
 
 The first array totals 164 bytes, the second one is 128 bytes for the array itself +154 bytes for the three python strs.
 
-If you're dealing with a raw sequence of bytes numpy has a fixed-length version of a python bytes type called `np.bytes_`:
+If you're dealing with a raw sequence of bytes NumPy has a fixed-length version of a python bytes type called `np.bytes_`:
 
 .. code:: python
 
@@ -207,7 +207,7 @@ If you're dealing with a raw sequence of bytes numpy has a fixed-length version 
 
 Here `|S5` means ‘endianness-unappliable sequence of bytes 5 elements long’.
 
-As for the native `np.str_` and `np.bytes_` types, numpy has a handful of common string operations mirroring str methods living in the np.char module that operate over the whole array:
+As for the native `np.str_` and `np.bytes_` types, NumPy has a handful of common string operations mirroring str methods living in the np.char module that operate over the whole array:
 
 .. code:: python
 
@@ -290,7 +290,7 @@ include subarrays.
 7. Type Checks
 **************
 
-One way to check numpy array type is to run isinstance against its element:
+One way to check NumPy array type is to run isinstance against its element:
 
 .. code:: python
 
@@ -299,7 +299,7 @@ One way to check numpy array type is to run isinstance against its element:
         >>> isinstance(v, np.int32)    # might be np.int64 on a different OS
         True
 
-All the numpy types are interconnected in an inheritance tree displayed in the top of the article (blue=abstract classes, green=numeric types, yellow=others) so instead of specifying a whole list of types like isinstance(v, [np.int32, np.int64, etc]) you can write more compact typechecks like
+All the NumPy types are interconnected in an inheritance tree displayed in the top of the article (blue=abstract classes, green=numeric types, yellow=others) so instead of specifying a whole list of types like isinstance(v, [np.int32, np.int64, etc]) you can write more compact typechecks like
 
 .. code:: python
 
@@ -341,9 +341,9 @@ The recommended way⁴ of checking the dtype against the abstract types is
         >>> np.issubdtype(a.dtype, np.floating)
         False
 
-It works with all native numpy types, but the necessity of this method looks somewhat non-obvious: what’s wrong with good oldisinstance? Obviously the complexity of dtypes inheritance structure (they are constructed ‘on the fly’!) didn’t allow to do it according to principle of the least astonishment.
+It works with all native NumPy types, but the necessity of this method looks somewhat non-obvious: what’s wrong with good oldisinstance? Obviously the complexity of dtypes inheritance structure (they are constructed ‘on the fly’!) didn’t allow to do it according to principle of the least astonishment.
 
-Yet another method is to use (undocumented, but used in scipy/numpy code bases) np.typecodes dictionary. The tree it represents is way less branchy:
+Yet another method is to use (undocumented, but used in SciPy/NumPy code bases) np.typecodes dictionary. The tree it represents is way less branchy:
 
 .. code:: python
 
@@ -377,5 +377,5 @@ References
 
 3. David Goldberg, `What Every Computer Scientist Should Know About Floating-Point Arithmetic, Appendix D <https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html>`_
 
-4. Numpy issue `#17325 <https://github.com/numpy/numpy/issues/17325>`_, Add a canonical way to determine if dtype is integer, floating point or complex
+4. NumPy issue `#17325 <https://github.com/numpy/numpy/issues/17325>`_, Add a canonical way to determine if dtype is integer, floating point or complex
 
