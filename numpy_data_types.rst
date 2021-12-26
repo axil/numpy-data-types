@@ -4,9 +4,9 @@ NumPy Data Types
 .. image:: img/numpy-data-types/numpy_types_diagram.png
   :alt: NumPy Types Diagram
 
-NumPy, a python library for efficient processing of n-dimentional arrays, is pretty omnivorous when it comes to data types: it can handle just everything.
+NumPy, a Python library for efficient processing of n-dimentional arrays, is pretty omnivorous when it comes to data types: it can handle just everything.
 
-It has its own set of ‘native’ types which it is capable of processing at full speed but it can also work with pretty much anything known to python.
+It has its own set of ‘native’ types which it is capable of processing at full speed but it can also work with pretty much anything known to Python.
 
 Outline
 
@@ -24,13 +24,13 @@ Outline
 .. image:: img/numpy-data-types/integers.png
   :alt: NumPy Integer Types
 
-When you feed a python int into NumPy, it gets converted into a native NumPy type called np.int32 (or np.int64 depending on the OS, python version and the magnitude of the initializers).
+When you feed a Python int into NumPy, it gets converted into a native NumPy type called np.int32 (or np.int64 depending on the OS, Python version and the magnitude of the initializers).
 
 If you’re unhappy with the int type that NumPy have chosen for you, you can specify one explicitly with np.zeros(10, np.uint8) or np.zeros(10, 'uint8').
 
 Just like in C/C++, `u` stands for 'unsigned' and the number designates the width of the variable in bits.
 
-NumPy works best when the width is fixed now so unlike ordinary python the value will rotate when it reaches the maximum value for the corresponding data type:
+NumPy works best when the width is fixed now so unlike ordinary Python the value will rotate when it reaches the maximum value for the corresponding data type:
 
 .. code:: python
 
@@ -87,7 +87,7 @@ But you can’t expect it to be detected when dealing with any arrays.
 
 NumPy also exposes a bunch of aliases (eg. np.intc=int in C, np.int_=long in C, etc) as an attempt to make the code closer to the underlying C code and thus more cross-platform. And yet some more aliases generally for internal usage (like np.intp=ssize_t in C, used in cython)
 
-Finally, if for some reason you need arbitrary-precision integers (python ints) in ndarrays, NumPy is capable of doing it, too:
+Finally, if for some reason you need arbitrary-precision integers (Python ints) in ndarrays, NumPy is capable of doing it, too:
 
 .. code:: python
 
@@ -95,7 +95,7 @@ Finally, if for some reason you need arbitrary-precision integers (python ints) 
         >>> len(str(a**1000))                   # '[1000...0]'
         1003
 
-— but without the speedup as it will store references instead of the numbers themselves, keep boxing/unboxing python objects when processing, etc.
+— but without the speedup as it will store references instead of the numbers themselves, keep boxing/unboxing Python objects when processing, etc.
 
 *********
 2. Floats
@@ -104,11 +104,11 @@ Finally, if for some reason you need arbitrary-precision integers (python ints) 
 .. image:: img/numpy-data-types/floats.png
   :alt: NumPy Floating Types
 
-As python did not diverge from IEEE 754-standardized C double type, the floattype transition from python to NumPy is pretty much hassle-free:
+As Python did not diverge from IEEE 754-standardized C double type, the floattype transition from Python to NumPy is pretty much hassle-free:
 
 \* This is the number reported by np.finfo(np.floatnn).precision. As usual with floats, depending on what you mean by significant digits it may be 15 (FLT_DIG) or 17 (FLT_DECIMAL_DIG) for float64, etc.
 
-** Support for np.float128 is somewhat limited: it is unix-only (not available on windows). Also the names float96/float128 are highly misleading. Under the hood it is not __float128 but whichever longdouble means in the local C++ flavor. On 86_x64 linux it is float80 (padded with zeros to for memory alignment) which is certainly wider than float64, but it comes at the cost of the processing speed. Also you risk losing precision if you inadvertently convert to python float type. For better portability it is recommended to use an alias np.longdouble instead of np.float96 / np.float128 because that’s what will be used internally anyway.
+** Support for np.float128 is somewhat limited: it is unix-only (not available on windows). Also the names float96/float128 are highly misleading. Under the hood it is not __float128 but whichever longdouble means in the local C++ flavor. On 86_x64 linux it is float80 (padded with zeros to for memory alignment) which is certainly wider than float64, but it comes at the cost of the processing speed. Also you risk losing precision if you inadvertently convert to Python float type. For better portability it is recommended to use an alias np.longdouble instead of np.float96 / np.float128 because that’s what will be used internally anyway.
 
 Floats exactly represent integers below a certain level (limited by the number of the significant digits):
 
@@ -165,22 +165,22 @@ More insights on floats can be found in the following sources:
 3. Bools
 ********
 
-The boolean values are stored as single bytes for better performance. `np.bool_` is a separate type from python’s bool because it doesn’t need reference counting and a link to the baseclass required for any pure python type. So if you think that using 8 bits to store one bit of information is excessive look at this:
+The boolean values are stored as single bytes for better performance. `np.bool_` is a separate type from Python’s bool because it doesn’t need reference counting and a link to the baseclass required for any pure Python type. So if you think that using 8 bits to store one bit of information is excessive look at this:
 
 .. code:: python
 
         >>> sys.getsizeof(True)
         28
 
-np.bool is 28 times more memory efficient than python’s bool ) It real-world scenarios the rate is lower though: when you pack NumPy bools into an array, they will take 1 byte each, but if you pack python bools into a list it will reference the same two values every time, costing effectively 8 bytes per element on x64.
+np.bool is 28 times more memory efficient than Python’s bool ) It real-world scenarios the rate is lower though: when you pack NumPy bools into an array, they will take 1 byte each, but if you pack Python bools into a list it will reference the same two values every time, costing effectively 8 bytes per element on x64.
 
-The underlines in `bool_`, `int_`, etc are there to avoid clashes with python’s types. It’s a bad idea to use reserved keywords for other things, but in this case it has an additional advantage of allowing (a generally discouraged, but useful in rare cases) from NumPy import * without shadowing python bools, ints, etc. As of today, np.bool still works but displays a deprecation warning.
+The underlines in `bool_`, `int_`, etc are there to avoid clashes with Python’s types. It’s a bad idea to use reserved keywords for other things, but in this case it has an additional advantage of allowing (a generally discouraged, but useful in rare cases) from NumPy import * without shadowing Python bools, ints, etc. As of today, np.bool still works but displays a deprecation warning.
 
 **********
 4. Strings
 **********
 
-Initializing a NumPy array with a list of python strings packs them into a fixed-width native NumPy dtype called `np.str_`. Reserving a space necessary to fit the longest string for every element might look wasteful (especially in the fixed USC-4 encoding as opposed to ‘dynamic’ choice of the UTF width in python str)
+Initializing a NumPy array with a list of Python strings packs them into a fixed-width native NumPy dtype called `np.str_`. Reserving a space necessary to fit the longest string for every element might look wasteful (especially in the fixed USC-4 encoding as opposed to ‘dynamic’ choice of the UTF width in Python str)
 
 .. code:: python
 
@@ -189,16 +189,16 @@ Initializing a NumPy array with a list of python strings packs them into a fixed
 
 The abbreviation ‘<U4’ comes from the so called array protocol and it means ‘little-endian USC-4-encoded string, 5 elements long’ (USC-4≈UTF-32, a fixed width, 4-bytes per character encoding). Every NumPy type has an abbreviation as unreadable as this one, luckily they have adopted human-readable names at least for the most used dtypes.
 
-Another option is to keep references to python strs in a NumPy array of objects:
+Another option is to keep references to Python strs in a NumPy array of objects:
 
 .. code:: python
 
         >>> np.array(['abcde', 'x', 'z'], dtype=object) # 1 byte ascii char
         array(['abcde', 'x', 'z'], dtype=object)       # 48+len(el) per el
 
-The first array totals 164 bytes, the second one is 128 bytes for the array itself +154 bytes for the three python strs.
+The first array totals 164 bytes, the second one is 128 bytes for the array itself +154 bytes for the three Python strs.
 
-If you're dealing with a raw sequence of bytes NumPy has a fixed-length version of a python bytes type called `np.bytes_`:
+If you're dealing with a raw sequence of bytes NumPy has a fixed-length version of a Python bytes type called `np.bytes_`:
 
 .. code:: python
 
@@ -215,7 +215,7 @@ As for the native `np.str_` and `np.bytes_` types, NumPy has a handful of common
         array([['A', 'B'],
         ['C', 'D']], dtype='<U1')
 
-With object-mode strings the loops must happen on the python level:
+With object-mode strings the loops must happen on the Python level:
 
 .. code:: python
 
@@ -231,7 +231,7 @@ According to my benchmarks, basic operations work somewhat faster with str than 
 
 An interesting data type, capable of counting time with selectable granularity — from years to attoseconds (an aspect in which other datetime libs tend to rely on the underlying OS) — represented invariably by int64.
 
-Years granularity means ‘just count the years’ — no real improvement against storing years as an integer. Days granularity is the equivalent of python’s datetime.date. Microseconds (or nanoseconds depending on the OS) is the equivalent of python’s datetime.datetime. And everything below is unique to np.datetime64.
+Years granularity means ‘just count the years’ — no real improvement against storing years as an integer. Days granularity is the equivalent of Python’s datetime.date. Microseconds (or nanoseconds depending on the OS) is the equivalent of Python’s datetime.datetime. And everything below is unique to np.datetime64.
 
 When creating an array you choose if you are ok with the default microseconds or you insist on nanoseconds or what not and it’ll give you 2⁶³ equidistant moments measured in the corresponding units of time to either side of 1 Jan 1970.
 
