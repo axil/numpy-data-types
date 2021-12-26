@@ -26,7 +26,12 @@ Outline
 
 When you feed a Python int into NumPy, it gets converted into a native NumPy type called np.int32 (or np.int64 depending on the OS, Python version and the magnitude of the initializers).
 
-If you’re unhappy with the int type that NumPy have chosen for you, you can specify one explicitly with np.zeros(10, np.uint8) or np.zeros(10, 'uint8').
+.. code:: python
+
+        >>> np.array([1,2,3]).dtype      
+        dtype('int32')                   # int32 on windows, int64 on linux and macos
+
+If you’re unhappy with the flavor of the integer type that NumPy has chosen for you, you can specify one explicitly via np.array([1,2,3], np.uint8) or np.array([1,2,3], 'uint8').
 
 Just like in C/C++, `u` stands for 'unsigned' and the number designates the width of the variable in bits.
 
@@ -34,32 +39,22 @@ NumPy works best when the width is fixed now so unlike ordinary Python the value
 
 .. code:: python
 
-        >>> np.array(10).dtype      # could be int64 on a different OS
-        dtype('int32')
-        >>> np.array(2**31–1)+1     # 2**31-1 is INT_MAX for int32
-        -2147483648
-        >>> np.array(2**63-1)+1    # always np.int64 because v > 2**32-1
+        >>> np.array([2**31-1])       # or np.array([2**31-1], np.int32) on linux/macos
+        array([2147483647]) 
+        >>> np.array([2**31–1])+1     # 2**31-1 is INT_MAX for int32
+        array([-2147483648]) 
+        >>> np.array([2**63-1])+1     # always np.int64 since v > 2**32-1
+        array([-9223372036854775808])
+
+NumPy doesn’t warn you about the overflows happening with arrays – only about scalars, and (to avoid flooding the output with warnings) only once:
+
+.. code:: python
+
+        >>> np.array([2**63–1])[0] + 1       # warning
+        RuntimeWarning: overflow encountered in long_scalars
         -9223372036854775808
-
-For performance reasons NumPy doesn’t warn you about the overflows happening with arrays — even with zero-dimensional array such as those in the example above. Speaking of zero-dimensional arrays a more realistic example where you can run into them is when you iterate over a NumPy array with nditer:
-
-.. code:: python
-
-        >>> v = next(np.nditer(np.arange(3, 5))); v
-        array(3)
-        >>> v.shape
-        ()
-        >>> v.ndim
-        0
-        >>> v[()]            # obtaining the value of the 0-dim array
-        3
-
-As for NumPy scalars — they are covered by the overflow warnings (the warning is displayed only once per session to avoid flooding the output):
-
-.. code:: python
-
-        >>> np.array([2**63–1])[0] + 1
-        RuntimeWarning: overflow encountered in longlong_scalars
+        >>> np.array([2**63–1])[0] + 1       # ok!
+        -9223372036854775808
 
 The reasoning behind such a discrimination is like this:
 
@@ -80,14 +75,17 @@ or suppress it entirely
 .. code:: python
 
         >>> with np.errstate(over='ignore'):
-        >>>    print(np.array([2**31-1])[0]+1)
-        -2147483648
+        >>>    print(np.array([2**64-1])[0]+1)
+        -9223372036854775808
 
-But you can’t expect it to be detected when dealing with any arrays.
+But you can’t expect it to be detected when dealing with any arrays (even with the 0-dimensional ones!).
 
-NumPy also exposes a bunch of aliases (eg. np.intc=int in C, np.int_=long in C, etc) as an attempt to make the code closer to the underlying C code and thus more cross-platform. And yet some more aliases generally for internal usage (like np.intp=ssize_t in C, used in cython)
+NumPy also has a bunch of C-style aliases (eg. np.byte=np.int8, np.short=np.int16, etc), but they are getting slowly deprecated (eg `np.long in numpy v1.20.0 <https://numpy.org/devdocs/release/1.20.0-notes.html#using-the-aliases-of-builtin-types-like-np-int-is-deprecated>`_) as 'explicit is better than implicit' (but see a present-day usage of np.longdouble below). And yet some more esotic aliases: 
 
-Finally, if for some reason you need arbitrary-precision integers (Python ints) in ndarrays, NumPy is capable of doing it, too:
+* `np.int_` is np.int32 on 64bit windows but int64 on 64bit linux, used to designate the 'default' int,
+* `np.intp` is np.int32 on 32bit python but np.int64 on 64bit python, python ≈ssize_t in C, used in cython
+
+Finally, if for some reason you need arbitrary-precision integers (Python ints) in ndarrays, NumPy is capable of doing that, too:
 
 .. code:: python
 
@@ -95,7 +93,7 @@ Finally, if for some reason you need arbitrary-precision integers (Python ints) 
         >>> len(str(a**1000))                   # '[1000...0]'
         1003
 
-— but without the speedup as it will store references instead of the numbers themselves, keep boxing/unboxing Python objects when processing, etc.
+— but without the usual speedup as it will have to store references instead of the numbers themselves, keep boxing/unboxing Python objects when processing, etc.
 
 *********
 2. Floats
@@ -108,7 +106,7 @@ As Python did not diverge from IEEE 754-standardized C double type, the floattyp
 
 \* This is the number reported by np.finfo(np.floatnn).precision. As usual with floats, depending on what you mean by significant digits it may be 15 (FLT_DIG) or 17 (FLT_DECIMAL_DIG) for float64, etc.
 
-** Support for np.float128 is somewhat limited: it is unix-only (not available on windows). Also the names float96/float128 are highly misleading. Under the hood it is not __float128 but whichever longdouble means in the local C++ flavor. On 86_x64 linux it is float80 (padded with zeros to for memory alignment) which is certainly wider than float64, but it comes at the cost of the processing speed. Also you risk losing precision if you inadvertently convert to Python float type. For better portability it is recommended to use an alias np.longdouble instead of np.float96 / np.float128 because that’s what will be used internally anyway.
+** Support for np.float128 is somewhat limited: it is unix-only (not available on windows). Also the names float96/float128 are highly misleading. Under the hood it is not __float128 but whichever longdouble means in the local C++ flavor. On x86_64 linux it is float80 (padded with zeros to for memory alignment) which is certainly wider than float64, but it comes at the cost of the processing speed. Also you risk losing precision if you inadvertently convert to Python float type. For better portability it is recommended to use an alias np.longdouble instead of np.float96 / np.float128 because that’s what will be used internally anyway.
 
 Floats exactly represent integers below a certain level (limited by the number of the significant digits):
 
@@ -172,7 +170,7 @@ The boolean values are stored as single bytes for better performance. `np.bool_`
         >>> sys.getsizeof(True)
         28
 
-np.bool is 28 times more memory efficient than Python’s bool ) It real-world scenarios the rate is lower though: when you pack NumPy bools into an array, they will take 1 byte each, but if you pack Python bools into a list it will reference the same two values every time, costing effectively 8 bytes per element on x64.
+np.bool is 28 times more memory efficient than Python’s bool ) It real-world scenarios the rate is lower though: when you pack NumPy bools into an array, they will take 1 byte each, but if you pack Python bools into a list it will reference the same two values every time, costing effectively 8 bytes per element on x86_64.
 
 The underlines in `bool_`, `int_`, etc are there to avoid clashes with Python’s types. It’s a bad idea to use reserved keywords for other things, but in this case it has an additional advantage of allowing (a generally discouraged, but useful in rare cases) from NumPy import * without shadowing Python bools, ints, etc. As of today, np.bool still works but displays a deprecation warning.
 
