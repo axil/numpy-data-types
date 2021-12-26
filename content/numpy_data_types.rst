@@ -21,8 +21,12 @@ Outline
 1. Integers
 ***********
 
+The integer types table in NumPy is absolutely trivial for anyone with minimal experience in C/C++: 
+
 .. image:: img/numpy-data-types/integers.png
   :alt: NumPy Integer Types
+
+Just like in C/C++, `u` stands for 'unsigned' and the number gives the amount of bits used to store the variable in memory (eg int64 is a 8-bytes-wide signed integer).
 
 When you feed a Python int into NumPy, it gets converted into a native NumPy type called np.int32 (or np.int64 depending on the OS, Python version and the magnitude of the initializers).
 
@@ -32,8 +36,6 @@ When you feed a Python int into NumPy, it gets converted into a native NumPy typ
         dtype('int32')                   # int32 on windows, int64 on linux and macos
 
 If you’re unhappy with the flavor of the integer type that NumPy has chosen for you, you can specify one explicitly via np.array([1,2,3], np.uint8) or np.array([1,2,3], 'uint8').
-
-Just like in C/C++, `u` stands for 'unsigned' and the number designates the width of the variable in bits.
 
 NumPy works best when the width is fixed now so unlike ordinary Python the value will rotate when it reaches the maximum value for the corresponding data type:
 
@@ -80,10 +82,11 @@ or suppress it entirely
 
 But you can’t expect it to be detected when dealing with any arrays (even with the 0-dimensional ones!).
 
-NumPy also has a bunch of C-style aliases (eg. np.byte=np.int8, np.short=np.int16, etc), but they are getting slowly deprecated (eg `np.long in numpy v1.20.0 <https://numpy.org/devdocs/release/1.20.0-notes.html#using-the-aliases-of-builtin-types-like-np-int-is-deprecated>`_) as 'explicit is better than implicit' (but see a present-day usage of np.longdouble below). And yet some more esotic aliases: 
+NumPy also has a bunch of C-style aliases (eg. np.byte=np.int8, np.short=np.int16, etc), but they are getting slowly deprecated (eg `np.long in numpy v1.20.0 <https://numpy.org/devdocs/release/1.20.0-notes.html#using-the-aliases-of-builtin-types-like-np-int-is-deprecated>`_) as 'explicit is better than implicit' (but see a present-day usage of np.longdouble below). And yet some more exotic aliases: 
 
-* `np.int_` is np.int32 on 64bit windows but int64 on 64bit linux, used to designate the 'default' int,
-* `np.intp` is np.int32 on 32bit python but np.int64 on 64bit python, python ≈ssize_t in C, used in cython
+* `np.int_` is np.int32 on 64bit windows but int64 on 64bit linux, used to designate the 'default' int. Specifying `np.int_` as a dtype is the same thing as specifying int and means "do what you would do if I didn't specify any dtype at all": np.array([1,2,3]), np.array([1,2,3], `np.int_`) and np.array([1,2,3], int) is the same thing.
+
+* `np.intp` is np.int32 on 32bit python but np.int64 on 64bit python, ≈ssize_t in C, used in cython
 
 Finally, if for some reason you need arbitrary-precision integers (Python ints) in ndarrays, NumPy is capable of doing that, too:
 
@@ -99,16 +102,16 @@ Finally, if for some reason you need arbitrary-precision integers (Python ints) 
 2. Floats
 *********
 
+As Python did not diverge from IEEE 754-standardized C double type, the floattype transition from Python to NumPy is pretty much hassle-free:
+
 .. image:: img/numpy-data-types/floats.png
   :alt: NumPy Floating Types
-
-As Python did not diverge from IEEE 754-standardized C double type, the floattype transition from Python to NumPy is pretty much hassle-free:
 
 \* This is the number reported by np.finfo(np.floatnn).precision. As usual with floats, depending on what you mean by significant digits it may be 15 (FLT_DIG) or 17 (FLT_DECIMAL_DIG) for float64, etc.
 
 ** Support for np.float128 is somewhat limited: it is unix-only (not available on windows). Also the names float96/float128 are highly misleading. Under the hood it is not __float128 but whichever longdouble means in the local C++ flavor. On x86_64 linux it is float80 (padded with zeros to for memory alignment) which is certainly wider than float64, but it comes at the cost of the processing speed. Also you risk losing precision if you inadvertently convert to Python float type. For better portability it is recommended to use an alias np.longdouble instead of np.float96 / np.float128 because that’s what will be used internally anyway.
 
-Floats exactly represent integers below a certain level (limited by the number of the significant digits):
+Just like in Python NumPy floats exactly represent integers - but only below a certain level (limited by the number of the significant digits):
 
 .. code:: python
 
@@ -170,9 +173,13 @@ The boolean values are stored as single bytes for better performance. `np.bool_`
         >>> sys.getsizeof(True)
         28
 
-np.bool is 28 times more memory efficient than Python’s bool ) It real-world scenarios the rate is lower though: when you pack NumPy bools into an array, they will take 1 byte each, but if you pack Python bools into a list it will reference the same two values every time, costing effectively 8 bytes per element on x86_64.
+np.bool is 28 times more memory efficient than Python’s bool ) – though in real-world scenarios the rate is lower: when you pack NumPy bools into an array, they will take 1 byte each, but if you pack Python bools into a list it will reference the same two values every time, costing effectively 8 bytes per element on x86_64:
 
-The underlines in `bool_`, `int_`, etc are there to avoid clashes with Python’s types. It’s a bad idea to use reserved keywords for other things, but in this case it has an additional advantage of allowing (a generally discouraged, but useful in rare cases) from NumPy import * without shadowing Python bools, ints, etc. As of today, np.bool still works but displays a deprecation warning.
+.. image:: img/numpy-data-types/bools.png
+  :alt: NumPy Boolean Type
+
+
+The underlines in `bool_`, `str_`, etc are there to avoid clashes with Python’s types. It’s a bad idea to use reserved keywords for other things, but in this case it has an additional advantage of allowing (a generally discouraged, but useful in rare cases) from NumPy import * without shadowing Python bools, ints, etc. As of today, np.bool still works but displays a deprecation warning.
 
 **********
 4. Strings
@@ -182,8 +189,8 @@ Initializing a NumPy array with a list of Python strings packs them into a fixed
 
 .. code:: python
 
-        >>> np.array(['abcde', 'x', 'y', 'z'])        # 4 bytes per character
-        array(['abcde', 'x', 'y', 'z'], dtype='<U5') # 5*4 bytes per element
+        >>> np.array(['abcde', 'x', 'y', 'z'])        # 4 bytes per any character
+        array(['abcde', 'x', 'y', 'z'], dtype='<U5')  # => 5*4 bytes per element
 
 The abbreviation ‘<U4’ comes from the so called array protocol and it means ‘little-endian USC-4-encoded string, 5 elements long’ (USC-4≈UTF-32, a fixed width, 4-bytes per character encoding). Every NumPy type has an abbreviation as unreadable as this one, luckily they have adopted human-readable names at least for the most used dtypes.
 
@@ -191,19 +198,38 @@ Another option is to keep references to Python strs in a NumPy array of objects:
 
 .. code:: python
 
-        >>> np.array(['abcde', 'x', 'z'], dtype=object) # 1 byte ascii char
-        array(['abcde', 'x', 'z'], dtype=object)       # 48+len(el) per el
+        >>> np.array(['abcde', 'x', 'y', 'z'], object)     # 1 byte per ascii character
+        array(['abcde', 'x', 'y', 'z'], dtype=object)      # => 49+len(el) per element
 
-The first array totals 164 bytes, the second one is 128 bytes for the array itself +154 bytes for the three Python strs.
+The first array memory footprint amounts to 164 bytes, the second one takes 128 bytes for the array itself + 154 bytes for the three python strs:
+
+.. image:: img/numpy-data-types/str.png
+  :alt: NumPy Str_ Type
+
+Depending on the relative lengths of the strings either one approach can be a significant win or the other.
 
 If you're dealing with a raw sequence of bytes NumPy has a fixed-length version of a Python bytes type called `np.bytes_`:
 
 .. code:: python
 
-        >>> np.array(['abcde', 'x', 'y', 'z'])        # 1 byte per ascii
-        array([b'abcde',b'x',b'y',b'z'], dtype='|S5') # 5 bytes per element
+        >>> np.array([b'abcde', b'x', b'y', b'z'])    # 1 byte per ascii character
+        array([b'abcde', b'x', b'y', b'z'], dtype='|S5') # => 5 bytes per element
 
 Here `|S5` means ‘endianness-unappliable sequence of bytes 5 elements long’.
+
+Once again, an alternative is to store the Python `bytes` in the NumPy array of objects. 
+
+.. code:: python
+
+        >>> np.array([b'abcde', b'x', b'z'], object)  # 1 byte per ascii character
+        array([b'abcde', b'x', b'z'], dtype=object)   # => 33+len(el) per element
+
+This time the first array takes 124 bytes, the second one is the same 128 bytes for the array itself + 106 bytes for the three python `bytes`:
+
+.. image:: img/numpy-data-types/bytes.png
+  :alt: NumPy Bytes_ Type
+
+We see that `str_` is smaller again, yet for more diverse lengths str can take the win.
 
 As for the native `np.str_` and `np.bytes_` types, NumPy has a handful of common string operations mirroring str methods living in the np.char module that operate over the whole array:
 
