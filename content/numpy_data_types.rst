@@ -4,18 +4,19 @@ NumPy Data Types
 .. image:: img/numpy-data-types/numpy_types_diagram.png
   :alt: NumPy Types Diagram
 
-NumPy, a Python library for efficient processing of n-dimentional arrays, is pretty omnivorous when it comes to data types: it can handle just everything.
+NumPy, one of the most popular Python libraries for both data science and scientific computing, is pretty omnivorous when it comes to data types: it can handle just everything.
 
 It has its own set of ‘native’ types which it is capable of processing at full speed but it can also work with pretty much anything known to Python.
 
-Outline
+The article consists of 7 parts:
 
 1. Integers
 2. Floats (including Fractions and Decimals)
 3. Bools
 4. Strings
 5. Datetimes
-6. Type Checks
+6. Combinations thereof
+7. Type Checks
 
 ***********
 1. Integers
@@ -26,43 +27,55 @@ The integer types table in NumPy is absolutely trivial for anyone with minimal e
 .. image:: img/numpy-data-types/integers.png
   :alt: NumPy Integer Types
 
-Just like in C/C++, `u` stands for 'unsigned' and the number gives the amount of bits used to store the variable in memory (eg int64 is a 8-bytes-wide signed integer).
+Just like in C/C++, `u` stands for 'unsigned' and the number is the amount of bits used to store the variable in memory (eg int64 is a 8-bytes-wide signed integer).
 
-When you feed a Python int into NumPy, it gets converted into a native NumPy type called np.int32 (or np.int64 depending on the OS, Python version and the magnitude of the initializers).
+When you feed a Python int into NumPy, it gets converted into a native NumPy type called np.int32 (or np.int64 depending on the OS, Python version and the magnitude of the initializers):
 
 .. code:: python
 
-        >>> np.array([1,2,3]).dtype      
+        >>> np.array([1, 2, 3]).dtype      
         dtype('int32')                   # int32 on windows, int64 on linux and macos
 
-If you’re unhappy with the flavor of the integer type that NumPy has chosen for you, you can specify one explicitly via np.array([1,2,3], np.uint8) or np.array([1,2,3], 'uint8').
+If you’re unhappy with the 'flavor' of the integer type that NumPy has chosen for you, you can specify one explicitly: np.array([1,2,3], np.uint8) or np.array([1,2,3], 'uint8').
 
-NumPy works best when the width is fixed now so unlike ordinary Python the value will rotate when it reaches the maximum value for the corresponding data type:
+NumPy works best when the width of the array elements is fixed. It is faster and takes less memory, but unlike an ordinary Python int (that works in arbitrary precision arithmetic) the value will wrap when it crosses the maximum (or minimum) value for the corresponding data type:
+
+.. image:: img/numpy-data-types/int_wrapping.png
+  :alt: Int Wrapping
 
 .. code:: python
 
-        >>> np.array([2**31-1])       # or np.array([2**31-1], np.int32) on linux/macos
+        >>> np.array([255], np.uint8) + 1 # 2**8-1 is INT_MAX for uint8
+        array([0], dtype=uint8)
+
+        >>> np.array([2**31-1])           # 2**31-1 is INT_MAX for int32
         array([2147483647]) 
-        >>> np.array([2**31–1])+1     # 2**31-1 is INT_MAX for int32
+
+        >>> np.array([2**31–1]) + 1       # or np.array([2**31-1], np.int32)+1 on linux
         array([-2147483648]) 
-        >>> np.array([2**63-1])+1     # always np.int64 since v > 2**32-1
+
+        >>> np.array([2**63-1]) + 1       # always np.int64 since v > 2**32-1
         array([-9223372036854775808])
 
-NumPy doesn’t warn you about the overflows happening with arrays – only about scalars, and (to avoid flooding the output with warnings) only once:
+\— not even a warning here!
+
+With scalars it is a different story: first NumPy tries it best to promote the value to a wider type, then, if there is none, fires the overflow warning (to avoid flooding the output with warnings—only once):
 
 .. code:: python
 
-        >>> np.array([2**63–1])[0] + 1       # warning
+        >>> np.array([255], np.uint8)[0] + 1   # ok, promoted to int32(win)/int64(linux)
+        256                                     
+        >>> np.array([2**31-1])[0] + 1         # warning!
         RuntimeWarning: overflow encountered in long_scalars
-        -9223372036854775808
-        >>> np.array([2**63–1])[0] + 1       # ok!
+        -2147483648
+        >>> np.array([2**63-1])[0] + 1         # ok, warned already
         -9223372036854775808
 
 The reasoning behind such a discrimination is like this:
 
     Unlike true floating point errors (where the hardware FPU sets a flag whenever it does an atomic operation that overflows), we need to implement the integer overflow detection ourselves. We do it on the scalars, but not arrays because it would be too slow to implement for every atomic operation on arrays. *Robert Kern, one of the NumPy core developers*
 
-You can make it an error
+You can turn it into an error:
 
 .. code:: python
 
@@ -72,19 +85,21 @@ You can make it an error
 
 (although the name FloatingPointError for an *integer* overflow looks a bit misleading.)
 
-or suppress it entirely
+... or suppress it entirely:
 
 .. code:: python
 
         >>> with np.errstate(over='ignore'):
-        >>>    print(np.array([2**64-1])[0]+1)
-        -9223372036854775808
+        >>>    print(np.array([2**31-1])[0]+1)
+        -2147483648
 
-But you can’t expect it to be detected when dealing with any arrays (even with the 0-dimensional ones!).
+But you can’t expect it to be detected when dealing with arrays (even with the 0-dimensional ones!).
 
-NumPy also has a bunch of C-style aliases (eg. np.byte=np.int8, np.short=np.int16, etc), but they are getting slowly deprecated (eg `np.long in numpy v1.20.0 <https://numpy.org/devdocs/release/1.20.0-notes.html#using-the-aliases-of-builtin-types-like-np-int-is-deprecated>`_) as 'explicit is better than implicit' (but see a present-day usage of np.longdouble below). And yet some more exotic aliases: 
+NumPy also has a bunch of C-style aliases (eg. np.byte np.int8, np.short=np.int16, np.intc=int whichever width it has in C etc), but they are getting gradually phased out (eg `deprecation of np.long in NumPy v1.20.0 <https://numpy.org/devdocs/release/1.20.0-notes.html#using-the-aliases-of-builtin-types-like-np-int-is-deprecated>`_) as 'explicit is better than implicit' (but see a present-day usage of np.longdouble below). 
 
-* `np.int_` is np.int32 on 64bit windows but int64 on 64bit linux, used to designate the 'default' int. Specifying `np.int_` as a dtype is the same thing as specifying int and means "do what you would do if I didn't specify any dtype at all": np.array([1,2,3]), np.array([1,2,3], `np.int_`) and np.array([1,2,3], int) is the same thing.
+And yet some more exotic aliases: 
+
+* `np.int_` is np.int32 on 64bit windows but int64 on 64bit linux, used to designate the 'default' int. Specifying `np.int_` as a dtype is the same thing as specifying int and means "do what you would do if I didn't specify any dtype at all": np.array([1,2,3]), np.array([1,2,3], `np.int_`) and np.array([1,2,3], int) are all the same thing.
 
 * `np.intp` is np.int32 on 32bit python but np.int64 on 64bit python, ≈ssize_t in C, used in cython
 
@@ -102,16 +117,18 @@ Finally, if for some reason you need arbitrary-precision integers (Python ints) 
 2. Floats
 *********
 
-As Python did not diverge from IEEE 754-standardized C double type, the floattype transition from Python to NumPy is pretty much hassle-free:
+As Python did not diverge from IEEE 754-standardized C double type, the floating type transition from Python to NumPy is pretty much hassle-free:
 
 .. image:: img/numpy-data-types/floats.png
   :alt: NumPy Floating Types
 
-\* This is the number reported by np.finfo(np.floatnn).precision. As usual with floats, depending on what you mean by significant digits it may be 15 (FLT_DIG) or 17 (FLT_DECIMAL_DIG) for float64, etc.
+\* *This is the number reported by np.finfo(np.float<nn>).precision. As usual with floats, depending on what you mean by significant digits it may be* |br|
+|_| |_| |_| *– 15* (`FLT_DIG <https://en.cppreference.com/w/cpp/types/numeric_limits/digits10>`_) *or 17* ( `FLT_DECIMAL_DIG <https://en.cppreference.com/w/cpp/types/numeric_limits/max_digits10>`_) *for np.float64,* |br|
+|_| |_| |_| *– 6 (FLT_DIG) or 9 (FLT_DECIMAL_DIG) for np.float32, etc.*
 
-** Support for np.float128 is somewhat limited: it is unix-only (not available on windows). Also the names float96/float128 are highly misleading. Under the hood it is not __float128 but whichever longdouble means in the local C++ flavor. On x86_64 linux it is float80 (padded with zeros to for memory alignment) which is certainly wider than float64, but it comes at the cost of the processing speed. Also you risk losing precision if you inadvertently convert to Python float type. For better portability it is recommended to use an alias np.longdouble instead of np.float96 / np.float128 because that’s what will be used internally anyway.
+** *Support for np.float128 is somewhat limited: it is unix-only (=linux and mac; not available on windows). Also the names float96/float128 are highly misleading. Under the hood it is not __float128 but whichever longdouble means in the local C++ flavor. On x86_64 linux it is float80 (padded with zeros for memory alignment) which is certainly wider than float64, but comes at the cost of slower processing speed. Also you risk losing precision if you inadvertently convert it to Python float type (which is 64bit wide). For better portability it is recommended to use an alias np.longdouble instead of np.float96 / np.float128 because that’s what will be used internally anyway.*
 
-Just like in Python NumPy floats exactly represent integers - but only below a certain level (limited by the number of the significant digits):
+Just like in pure Python, NumPy floats exactly represent integers—but only below a certain level (limited by the number of the significant digits):
 
 .. code:: python
 
@@ -124,19 +141,21 @@ Just like in Python NumPy floats exactly represent integers - but only below a c
         >>> len('9279945539648888') # Don't trust the 16th decimal digit!
         16
 
-Also exactly representable are fractions like 0.5, 0.125, 0.875 where the denominator is a power of 2 (0.5=1/2, 0.125=1/8, 0.875 =7/8, etc). Any other denominator will result in a rounding error so that 0.1+0.2!=0.3. The standard approach of dealing with this problem is to compare them with a relative tolerance (to compare two non-zero arguments) and absolute tolerance (if one of the arguments is zero). For scalars it is handled by `math.isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0)`, for NumPy arrays there’s a vector version `np.isclose(a, b, rtol=1e-05, atol=1e-08)`. Note that the tolerances have different names and defaults.
+Also exactly representable are fractions like 0.5, 0.125, 0.875 where the denominator is a power of 2 (0.5=1/2, 0.125=1/8, 0.875 =7/8, etc).
 
-For the financial data decimal.Decimal type is handy as it involves no additional tolerances at all:
+Any other denominator will result in a rounding error so that 0.1+0.2!=0.3. The standard approach of dealing with this problem is to compare them with a relative tolerance (to compare two non-zero arguments) and absolute tolerance (if one of the arguments is zero). For scalars it is handled by `math.isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0)`, for NumPy arrays there’s a vectorized version `np.isclose(a, b, rtol=1e-05, atol=1e-08)`. Note that the tolerance arguments have different names and defaults.
+
+For the financial data decimal.Decimal type is handy as it involves no tolerances at all:
 
 .. code:: python
 
         >>> from decimal import Decimal as D
         >>> a = np.array([D('0.1'), D('0.2')]); a
         array([Decimal('0.1'), Decimal('0.2')], dtype=object)
-        >>> a.sum()
+        >>> a.sum()                     # == Decimal('0.3'), exactly      
         Decimal('0.3')
 
-But it is not a silver bullet: it also has rounding errors. The only problem it solves is the exact representation of decimal numbers that humans are used to. Plus it doesn’t support anything more complicated than arithmetic operations and a square root and runs slower than floats.
+But Decimal type is not a silver bullet: it also has rounding errors. The only problem it solves is the exact representation of decimal fractions that humans are so used to. Plus it doesn’t support anything more complicated than arithmetic operations and a square root and runs slower than floats.
 
 For pure mathematic calculations fractions.Fraction can be used:
 
@@ -150,7 +169,7 @@ For pure mathematic calculations fractions.Fraction can be used:
         >>> a.sum()
         Fraction(3, 10)
 
-It can represent any rational numbers, but pi and exp are out of luck )
+It can represent any rational number, but pi and exp are out of luck )
 
 Both Decimal and Fraction are not native types for NumPy but it is capable of working with them with all the niceties like multi-dimensions and fancy indexing, albeight at the cost of slower processing speed than that of native ints or floats.
 
@@ -158,9 +177,21 @@ Complex numbers are processed no differently than floats with extra convenience 
 
 More insights on floats can be found in the following sources:
 
-* short and nicely illustrated ‘Half precision floating point visualized¹’ (eg what’s the difference between normal and subnormal numbers)
-* more lengthy but very to-the-point, a dedicated website ‘Floating point guide²’ (eg why 0.1+0.2!=0.3)
-* long-read, a deep and thorough ‘What every computer scientist should know about floating-point arithmetic³’ (eg what’s the difference between catastrophic vs benign cancellation)
+.. |_| unicode:: 0xA0 
+   :trim:
+
+.. |br| raw:: html
+
+  <br/>
+
+\• short and nicely illustrated `‘Half-Precision Floating-Point, Visualized’ <https://observablehq.com/@rreusser/half-precision-floating-point-visualized>`_ [2] |br|
+|_| |_| |_| — eg What’s the difference between normal and subnormal numbers?
+
+\• more lengthy but very to-the-point, a dedicated website `‘Floating point guide’ <https://floating-point-gui.de/>`_ [3]  |br|
+|_| |_| |_| — eg Why 0.1+0.2!=0.3? 
+
+\• long-read, a deep and thorough `What Every Computer Scientist Should Know About Floating-Point Arithmetic, Appendix D <https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html>`_ [4]  |br|
+|_| |_| |_| — eg What’s the difference between catastrophic vs benign cancellation?
 
 ********
 3. Bools
@@ -179,7 +210,7 @@ np.bool is 28 times more memory efficient than Python’s bool ) – though in r
   :alt: NumPy Boolean Type
 
 
-The underlines in `bool_`, `str_`, etc are there to avoid clashes with Python’s types. It’s a bad idea to use reserved keywords for other things, but in this case it has an additional advantage of allowing (a generally discouraged, but useful in rare cases) from NumPy import * without shadowing Python bools, ints, etc. As of today, np.bool still works but displays a deprecation warning.
+The underlines in `bool_`, `int_`, etc are there to avoid clashes with Python’s types. It’s a bad idea to use reserved keywords for other things, but in this case it has an additional advantage of allowing (a generally discouraged, but useful in rare cases) from NumPy import * without shadowing Python bools, ints, etc. As of today, np.bool still works but displays a deprecation warning.
 
 **********
 4. Strings
@@ -192,7 +223,7 @@ Initializing a NumPy array with a list of Python strings packs them into a fixed
         >>> np.array(['abcde', 'x', 'y', 'z'])        # 4 bytes per any character
         array(['abcde', 'x', 'y', 'z'], dtype='<U5')  # => 5*4 bytes per element
 
-The abbreviation ‘<U4’ comes from the so called array protocol and it means ‘little-endian USC-4-encoded string, 5 elements long’ (USC-4≈UTF-32, a fixed width, 4-bytes per character encoding). Every NumPy type has an abbreviation as unreadable as this one, luckily they have adopted human-readable names at least for the most used dtypes.
+The abbreviation ‘<U4’ comes from the so called array protocol introduced in 2005. It means ‘little-endian USC-4-encoded string, 5 elements long’ (USC-4≈UTF-32, a fixed width, 4-bytes per character encoding). Every NumPy type has an abbreviation as unreadable as this one, luckily have they adopted human-readable names at least for the most used dtypes.
 
 Another option is to keep references to Python strs in a NumPy array of objects:
 
@@ -206,7 +237,7 @@ The first array memory footprint amounts to 164 bytes, the second one takes 128 
 .. image:: img/numpy-data-types/str.png
   :alt: NumPy Str_ Type
 
-Depending on the relative lengths of the strings either one approach can be a significant win or the other.
+Depending on the relative lengths of the strings and the number of the repeated string either one approach can be a significant win or the other.
 
 If you're dealing with a raw sequence of bytes NumPy has a fixed-length version of a Python bytes type called `np.bytes_`:
 
@@ -253,7 +284,7 @@ According to my benchmarks, basic operations work somewhat faster with str than 
 5. Datetimes
 ****************
 
-An interesting data type, capable of counting time with selectable granularity — from years to attoseconds (an aspect in which other datetime libs tend to rely on the underlying OS) — represented invariably by int64.
+An interesting data type, capable of counting time with configurable granularity — from years to attoseconds (an aspect in which other datetime libs tend to rely on the underlying OS) — represented invariably by int64.
 
 Years granularity means ‘just count the years’ — no real improvement against storing years as an integer. Days granularity is the equivalent of Python’s datetime.date. Microseconds (or nanoseconds depending on the OS) is the equivalent of Python’s datetime.datetime. And everything below is unique to np.datetime64.
 
@@ -356,7 +387,7 @@ and in operator for checking against a group of types:
 
 But for more sophisticated types like `np.str_` or `np.datetime64` it doesn’t.
 
-The recommended way⁴ of checking the dtype against the abstract types is
+The recommended way [5] of checking the dtype against the abstract types is
 
 .. code:: python
 
