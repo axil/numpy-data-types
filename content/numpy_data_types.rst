@@ -171,7 +171,7 @@ For pure mathematic calculations fractions.Fraction can be used:
 
 It can represent any rational number, but pi and exp are out of luck )
 
-Both Decimal and Fraction are not native types for NumPy but it is capable of working with them with all the niceties like multi-dimensions and fancy indexing, albeight at the cost of slower processing speed than that of native ints or floats.
+Both Decimal and Fraction are not native types for NumPy but it is capable of working with them with all the niceties like multi-dimensions and fancy indexing, albeit at the cost of slower processing speed than that of native ints or floats.
 
 Complex numbers are processed no differently than floats with extra convenience functions with intuitive names like np.real(z), np.imag(z), np.abs(z), np.angle(z) that work on both scalars and arrays as a whole.
 
@@ -197,7 +197,7 @@ More insights on floats can be found in the following sources:
 3. Bools
 ********
 
-The boolean values are stored as single bytes for better performance. `np.bool_` is a separate type from Python’s bool because it doesn’t need reference counting and a link to the baseclass required for any pure Python type. So if you think that using 8 bits to store one bit of information is excessive look at this:
+The boolean values are stored as single bytes for better performance. `np.bool_` is a separate type from Python’s bool because it doesn’t need reference counting and a link to the base class required for any pure Python type. So if you think that using 8 bits to store one bit of information is excessive look at this:
 
 .. code:: python
 
@@ -284,7 +284,7 @@ According to my benchmarks, basic operations work somewhat faster with str than 
 5. Datetimes
 ****************
 
-An interesting data type, capable of counting time with configurable granularity — from years to attoseconds (an aspect in which other datetime libs tend to rely on the underlying OS) — represented invariably by int64.
+An interesting data type, capable of counting time with a configurable granularity — from years to attoseconds (an aspect in which other datetime libs tend to rely on the underlying OS) — represented invariably by a single int64 number.
 
 Years granularity means ‘just count the years’ — no real improvement against storing years as an integer. Days granularity is the equivalent of Python’s datetime.date. Microseconds (or nanoseconds depending on the OS) is the equivalent of Python’s datetime.datetime. And everything below is unique to np.datetime64.
 
@@ -302,14 +302,14 @@ One downside of it is that all the times are naive: they know nothing of dayligh
 6. Combinations thereof
 ***********************
 
-A structured dtype allows to create a custom type using the types described above as the basic building blocks. Typical example is an RGB pixel: a 4 bytes long type, in which the colors can be accessed by name: 
+A structured array is an array with a custom dtype made from the types described above as the basic building blocks. Typical example is an RGB pixel color: a 4 bytes long type, in which the colors can be accessed by name: 
 
 .. code:: python
 
         >>> rgb = np.dtype([('x', np.uint8), ('y', np.uint8), ('z', np.uint8)])
         >>> a = np.zeros(5, z); a
         array([(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
-            dtype=[('x', 'u1'), ('y', 'u1'), ('z', 'u1')])
+              dtype=[('x', 'u1'), ('y', 'u1'), ('z', 'u1')])
         >>> a[0]
         (0, 0, 0)
         >>> a[0]['x']
@@ -317,11 +317,11 @@ A structured dtype allows to create a custom type using the types described abov
         >>> a[0]['x'] = 10
         >>> a
         array([(10, 0, 0), ( 0, 0, 0), ( 0, 0, 0), ( 0, 0, 0), ( 0, 0, 0)],
-            dtype=[('x', 'u1'), ('y', 'u1'), ('z', 'u1')])
+              dtype=[('x', 'u1'), ('y', 'u1'), ('z', 'u1')])
         >>> a['z'] = 5
         >>> a
         array([(10, 0, 5), ( 0, 0, 5), ( 0, 0, 5), ( 0, 0, 5), ( 0, 0, 5)],
-            dtype=[('x', 'u1'), ('y', 'u1'), ('z', 'u1')])
+              dtype=[('x', 'u1'), ('y', 'u1'), ('z', 'u1')])
 
 To be able to access the fields as attributes, a recarray can be used:
 
@@ -335,9 +335,9 @@ To be able to access the fields as attributes, a recarray can be used:
         10
         >>> b.y=7; b
         rec.array([(10, 7, 5), ( 0, 7, 5), ( 0, 7, 5), ( 0, 7, 5), ( 0, 7, 5)],
-          dtype=[('x', 'u1'), ('y', 'u1'), ('z', 'u1')])
+                  dtype=[('x', 'u1'), ('y', 'u1'), ('z', 'u1')])
         
-Sure enough, recarray can be created on its own, without being a view of something else.
+Here it works like reinterpret_cast in C++, but sure enough, recarray can be created on its own, without being a view of something else.
 Types for structured dtypes do not necessarily need to be homogenic and can even
 include subarrays.
 
