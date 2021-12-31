@@ -1,5 +1,7 @@
-NumPy Data Types
-################
+A Comprehensive Guide to NumPy Data Types
+#########################################
+
+:canonical_url: https://medium.com/@levmaximov/8f62cb57ea83?sk=a417246f0cf9e24aca734525711299d3
 
 .. image:: img/numpy-data-types/numpy_types_diagram.png
   :alt: NumPy Types Diagram
@@ -43,18 +45,20 @@ NumPy works best when the width of the array elements is fixed. It is faster and
 .. image:: img/numpy-data-types/int_wrapping.png
   :alt: Int Wrapping
 
+\* *Strictly speaking, the C standard defines this wraparound only for the unsigned integers; the overflow behavior for the signed integers is undefined and can’t be relied upon (in both C and NumPy). Signed integers are silently wrapped around now, but there’s no guarantee they always will.*
+
 .. code:: python
 
-        >>> np.array([255], np.uint8) + 1 # 2**8-1 is INT_MAX for uint8
+        >>> np.array([255], np.uint8) + 1   # 2**8-1 is INT_MAX for uint8
         array([0], dtype=uint8)
 
-        >>> np.array([2**31-1])           # 2**31-1 is INT_MAX for int32
+        >>> np.array([2**31-1])             # 2**31-1 is INT_MAX for int32
         array([2147483647]) 
 
-        >>> np.array([2**31–1]) + 1       # or np.array([2**31-1], np.int32)+1 on linux
+        >>> np.array([2**31-1]) + 1         # or np.array([2**31-1], np.int32)+1 on linux
         array([-2147483648]) 
 
-        >>> np.array([2**63-1]) + 1       # always np.int64 since v > 2**32-1
+        >>> np.array([2**63-1]) + 1         # always np.int64 since v > 2**32-1
         array([-9223372036854775808])
 
 \— not even a warning here!
@@ -99,9 +103,23 @@ NumPy also has a bunch of C-style aliases (eg. np.byte np.int8, np.short=np.int1
 
 And yet some more exotic aliases: 
 
-* `np.int_` is np.int32 on 64bit windows but int64 on 64bit linux, used to designate the 'default' int. Specifying `np.int_` as a dtype is the same thing as specifying int and means "do what you would do if I didn't specify any dtype at all": np.array([1,2,3]), np.array([1,2,3], `np.int_`) and np.array([1,2,3], int) are all the same thing.
+* `np.int_` is np.int32 on 64bit windows but int64 on 64bit linux, used to designate the 'default' int. Specifying `np.int_` (or just int) as a dtype means "do what you would do if I didn't specify any dtype at all": np.array([1,2]), np.array([1,2], `np.int_`) and np.array([1,2], int) are all the same thing.
 
-* `np.intp` is np.int32 on 32bit python but np.int64 on 64bit python, ≈ssize_t in C, used in cython
+* `np.intp` is np.int32 on 32bit python but np.int64 on 64bit python, ≈ssize_t in C, used in Cython as a type for pointers.
+
+Occasionally it happens that some of the values in the array display anomalous behavior or missing and you want to process the array without deleting them (eg there's some valid data in other columns).
+
+You can't put None there because it doesn't fit in the consecutive np.int64 values and also because 1+None is an unsupported operation.
+
+Pandas has a separate data type for that, but NumPy's way of dealing with the missed values is through the so-called masked array: you mark the invalid values with a boolean mask and then all the operations are carried out as if the values are not there.
+
+.. code:: python
+
+        >>> np.array([4,0,6]).mean()          # the value 0 means 'missing' here
+        3.3333333333333335
+        >>> import numpy.ma as ma
+        >>> ma.array([4,0,6], mask=[0,1,0]).mean()
+        5.0
 
 Finally, if for some reason you need arbitrary-precision integers (Python ints) in ndarrays, NumPy is capable of doing that, too:
 
@@ -122,11 +140,33 @@ As Python did not diverge from IEEE 754-standardized C double type, the floating
 .. image:: img/numpy-data-types/floats.png
   :alt: NumPy Floating Types
 
-\* *This is the number reported by np.finfo(np.float<nn>).precision. As usual with floats, depending on what you mean by significant digits it may be* |br|
-|_| |_| |_| *– 15* (`FLT_DIG <https://en.cppreference.com/w/cpp/types/numeric_limits/digits10>`_) *or 17* ( `FLT_DECIMAL_DIG <https://en.cppreference.com/w/cpp/types/numeric_limits/max_digits10>`_) *for np.float64,* |br|
-|_| |_| |_| *– 6 (FLT_DIG) or 9 (FLT_DECIMAL_DIG) for np.float32, etc.*
+\* As reported by np.finfo(np.float<nn>).precision.Deending on what you mean it may be:  15* (`15 <https://en.cppreference.com/w/cpp/types/numeric_limits/digits10>`_) *or* ( `17 FLT_DECIMAL_DIG <https://en.cppreference.com/w/cpp/types/numeric_limits/max_digits10>`_) for np.float64, 6 or 9 for np.float32, etc.
 
-** *Support for np.float128 is somewhat limited: it is unix-only (=linux and mac; not available on windows). Also the names float96/float128 are highly misleading. Under the hood it is not __float128 but whichever longdouble means in the local C++ flavor. On x86_64 linux it is float80 (padded with zeros for memory alignment) which is certainly wider than float64, but comes at the cost of slower processing speed. Also you risk losing precision if you inadvertently convert it to Python float type (which is 64bit wide). For better portability it is recommended to use an alias np.longdouble instead of np.float96 / np.float128 because that’s what will be used internally anyway.*
+** As of today, np.float128 is Unix-only (not available on Windows).
+
+Like integers, floats are also subject to overflow errors.
+
+Suppose you're calculating a sigmoid activation function of the array and one of its element happens to be
+
+.. code:: python
+
+        >>> x = np.array([-1234.5])
+        >>> 1/(1+np.exp(-x))
+        RuntimeWarning: overflow encountered in exp
+        array([0.])
+        >>> np.exp(np.array([1234.5]))
+        RuntimeWarning: overflow encountered in exp
+        array([inf])
+
+What this warning is trying to tell you is that NumPy is aware that mathematically speaking 1/(1+exp(-x)) should never be 0., but in this particular case due an overflow it is.
+Such warnings can be 'upgraded' to exceptions or silenced via the errstate or filterwarnings as described in the 'integers' section above - and maybe for this particular case that would be enough - but if you really want to get the exact value you can select a wider dtype:
+
+.. code:: python
+
+        >>> x = np.array([-1234.5], dtype=np.float128)
+        >>> 1/(1+np.exp(-x))
+        array([7.30234068e-537], dtype=float128)
+
 
 Just like in pure Python, NumPy floats exactly represent integers—but only below a certain level (limited by the number of the significant digits):
 
@@ -173,7 +213,32 @@ It can represent any rational number, but pi and exp are out of luck )
 
 Both Decimal and Fraction are not native types for NumPy but it is capable of working with them with all the niceties like multi-dimensions and fancy indexing, albeit at the cost of slower processing speed than that of native ints or floats.
 
-Complex numbers are processed no differently than floats with extra convenience functions with intuitive names like np.real(z), np.imag(z), np.abs(z), np.angle(z) that work on both scalars and arrays as a whole.
+Complex numbers are processed no differently than floats with extra convenience functions with intuitive names like np.real(z), np.imag(z), np.abs(z), np.angle(z) that work on both scalars and arrays as a whole. The only gotcha is that unlike pure Python complex, `np.complex_` does not work with integers:
+
+.. code:: python
+
+        >>> np.array([1+2j])                  # .dtype == np.complex128
+        array([1.+2.j])
+
+
+Just like with the integers, in float (and complex) arrays it is also sometimes useful to treat certain values as 'missing'. Floats are better suited for storing anomalous data: they have a math.nan (or np.nan or float('nan')) value which can be stored inline with the 'valid' numeric values.
+
+But nan is contagious in the sense that all the arithmetic with nan results in nan.Most common statistical functions have a nan-resistant version (np.nansum, np.nanstd, etc), but other operations on that column or array would require prefiltering. Masked arrays automate this step: the mask can only be built once, then it is 'glued' to the original array so that all subsequent operations only see the unmasked values and operate on them.
+
+
+.. code:: python
+
+        >>> a = np.array([4., np.nan, 6.])
+        >>> a.mean()
+        nan
+        >>> a.nanmean()
+        5.0
+        >>> a[~np.isnan(a)].mean()
+        5.0
+        >>> ma.array(a, mask=[0,1,0]).mean() # nan is not required here, could be anything
+        5.0
+
+Also the names float96/float128 are somewhat misleading. Under the hood it is not __float128 but whichever longdouble means in the local C++ flavor. On x86_64 Linux it is float80 (padded with zeros for memory alignment) which is certainly wider than float64, but it comes at the cost of the processing speed. Also you risk losing precision if you inadvertently convert to Python float type. For better portability it is recommended to use an alias np.longdouble instead of np.float96 / np.float128 because that's what will be used internally anyway.
 
 More insights on floats can be found in the following sources:
 
@@ -184,13 +249,13 @@ More insights on floats can be found in the following sources:
 
   <br/>
 
-\• short and nicely illustrated `‘Half-Precision Floating-Point, Visualized’ <https://observablehq.com/@rreusser/half-precision-floating-point-visualized>`_ [2] |br|
+|_| \• |_| short and nicely illustrated `‘Half-Precision Floating-Point, Visualized’ <https://observablehq.com/@rreusser/half-precision-floating-point-visualized>`_ [2] |br|
 |_| |_| |_| — eg What’s the difference between normal and subnormal numbers?
 
-\• more lengthy but very to-the-point, a dedicated website `‘Floating point guide’ <https://floating-point-gui.de/>`_ [3]  |br|
+|_| \• |_| more lengthy but very to-the-point, a dedicated website `‘Floating point guide’ <https://floating-point-gui.de/>`_ [3]  |br|
 |_| |_| |_| — eg Why 0.1+0.2!=0.3? 
 
-\• long-read, a deep and thorough `What Every Computer Scientist Should Know About Floating-Point Arithmetic, Appendix D <https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html>`_ [4]  |br|
+|_| \• |_| long-read, a deep and thorough `What Every Computer Scientist Should Know About Floating-Point Arithmetic, Appendix D <https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html>`_ [4]  |br|
 |_| |_| |_| — eg What’s the difference between catastrophic vs benign cancellation?
 
 ********
@@ -220,8 +285,8 @@ Initializing a NumPy array with a list of Python strings packs them into a fixed
 
 .. code:: python
 
-        >>> np.array(['abcde', 'x', 'y', 'z'])        # 4 bytes per any character
-        array(['abcde', 'x', 'y', 'z'], dtype='<U5')  # => 5*4 bytes per element
+        >>> np.array(['abcde', 'x', 'y', 'x'])        # 4 bytes per any character
+        array(['abcde', 'x', 'y', 'x'], dtype='<U5')  # => 5*4 bytes per element
 
 The abbreviation ‘<U4’ comes from the so called array protocol introduced in 2005. It means ‘little-endian USC-4-encoded string, 5 elements long’ (USC-4≈UTF-32, a fixed width, 4-bytes per character encoding). Every NumPy type has an abbreviation as unreadable as this one, luckily have they adopted human-readable names at least for the most used dtypes.
 
@@ -229,8 +294,8 @@ Another option is to keep references to Python strs in a NumPy array of objects:
 
 .. code:: python
 
-        >>> np.array(['abcde', 'x', 'y', 'z'], object)     # 1 byte per ascii character
-        array(['abcde', 'x', 'y', 'z'], dtype=object)      # => 49+len(el) per element
+        >>> np.array(['abcde', 'x', 'y', 'x'], object)     # 1 byte per ascii character
+        array(['abcde', 'x', 'y', 'x'], dtype=object)      # => 49+len(el) per element
 
 The first array memory footprint amounts to 164 bytes, the second one takes 128 bytes for the array itself + 154 bytes for the three python strs:
 
@@ -243,8 +308,8 @@ If you're dealing with a raw sequence of bytes NumPy has a fixed-length version 
 
 .. code:: python
 
-        >>> np.array([b'abcde', b'x', b'y', b'z'])    # 1 byte per ascii character
-        array([b'abcde', b'x', b'y', b'z'], dtype='|S5') # => 5 bytes per element
+        >>> np.array([b'abcde', b'x', b'y', b'x'])        # 1 byte per ascii character
+        array([b'abcde', b'x', b'y', b'x'], dtype='|S5')  # => 5 bytes per element
 
 Here `|S5` means ‘endianness-unappliable sequence of bytes 5 elements long’.
 
@@ -252,8 +317,8 @@ Once again, an alternative is to store the Python `bytes` in the NumPy array of 
 
 .. code:: python
 
-        >>> np.array([b'abcde', b'x', b'z'], object)  # 1 byte per ascii character
-        array([b'abcde', b'x', b'z'], dtype=object)   # => 33+len(el) per element
+        >>> np.array([b'abcde', b'x', b'y', b'x'], object)   # 1 byte per ascii character
+        array([b'abcde', b'x', b'y', b'x'], dtype=object)    # => 33+len(el) per element
 
 This time the first array takes 124 bytes, the second one is the same 128 bytes for the array itself + 106 bytes for the three python `bytes`:
 
@@ -268,15 +333,16 @@ As for the native `np.str_` and `np.bytes_` types, NumPy has a handful of common
 
         >>> np.char.upper(np.array([['a','b'],['c','d']]))
         array([['A', 'B'],
-        ['C', 'D']], dtype='<U1')
+               ['C', 'D']], dtype='<U1')
 
 With object-mode strings the loops must happen on the Python level:
 
 .. code:: python
 
+        >>> a = np.array([['a','b'],['c','d']], object)
         >>> np.vectorize(lambda x: x.upper(), otypes=[object])(a)
         array([['A', 'B'],
-            ['C', 'D']], dtype=object)
+               ['C', 'D']], dtype=object)
 
 According to my benchmarks, basic operations work somewhat faster with str than with `np.str_`.
 
@@ -284,7 +350,7 @@ According to my benchmarks, basic operations work somewhat faster with str than 
 5. Datetimes
 ****************
 
-An interesting data type, capable of counting time with a configurable granularity — from years to attoseconds (an aspect in which other datetime libs tend to rely on the underlying OS) — represented invariably by a single int64 number.
+NumPy introduces an interesting data type, similar to a POSIX timestamp (aka Unix time, the number of seconds since 1 Jan 1970) but capable of counting time with a configurable granularity—from years to attoseconds (an aspect in which other datetime libraries tend to rely on the underlying OS)—represented invariably by a single int64 number.
 
 Years granularity means ‘just count the years’ — no real improvement against storing years as an integer. Days granularity is the equivalent of Python’s datetime.date. Microseconds (or nanoseconds depending on the OS) is the equivalent of Python’s datetime.datetime. And everything below is unique to np.datetime64.
 
@@ -295,14 +361,70 @@ When creating an array you choose if you are ok with the default microseconds or
         >>> np.array([dt.utcnow()], dtype=np.datetime64)
         array(['2021-12-24T18:14:00.403438'], dtype='datetime64[us]')
 
-One downside of it is that all the times are naive: they know nothing of daylight saving and are not capable of being converted from one timezone to another. So it is not a replacement for pytz, rather a complement to it.
+        >>> np.array([dt.utcnow()], dtype='datetime64[ns]')   # us is too coarse for me!
+        array(['2021-12-24T18:14:00.403438000'], dtype='datetime64[ns]')
+
+As in pure python, np.datetime64 is accompained by np.timedelta64 (stored as a single np.int64) with the expectable arithmetic operators.
+
+For example, to calculate the number of seconds until the New Year
+
+.. code:: python
+
+        >>> z = np.datetime64('2022-01-01') - np.datetime64(dt.now()); z
+        numpy.timedelta64(295345588878,'us')
+
+        >>> z.item()                 # getting an ordinary datetime
+        datetime.timedelta(3, 36353, 424753)
+
+        >>> z.item().total_seconds()
+        295553.424753
+        
+Or if you don't care about the fractional part, simply
+
+.. code:: python
+
+        >>> np.datetime64('2022-01-01') - np.datetime64(dt.now(), 's')
+        numpy.timedelta64(295259,'s')
+
+The (official!) `Day of the Programmer <https://en.wikipedia.org/wiki/Day_of_the_Programmer>`_ in Russia is celebrated on the 256th day of the year:
+
+.. code:: python
+
+        >>> np.datetime64('2022-01-01') + np.timedelta64(256, 'D')
+        numpy.datetime64('2022-09-14')
+
+Leap years are supported:
+
+.. code:: python
+
+        >>> np.array(['2020-03-01', '2022-03-01', '2024-03-01'], np.datetime64) - \
+            np.array(['2020-02-01', '2022-02-01', '2024-02-01'], np.datetime64)
+        array([29, 28, 29], dtype='timedelta64[D]')
+
+`Leap seconds <https://en.wikipedia.org/wiki/Leap_second>`_ are not:
+
+.. code:: python
+
+        >>> np.datetime64('2017-01-01')- np.datetime64('2016-12-31T23:59:00')
+        numpy.timedelta64(60,'s')
+        
+To be fair, neither datetime.datetime nor pytz count them, either (although in general `it is possible <https://stackoverflow.com/questions/19332902/extract-historic-leap-seconds-from-tzdata>`_ with pytz). It looks as if only astropy `calculates <https://het.as.utexas.edu/HET/Software/Astropy-1.0/api/astropy.time.TimeGPS.html>`_ them correctly, others adhere to `proleptic Gregorian calendar <https://en.wikipedia.org/wiki/Proleptic_Gregorian_calendar>`_ with its exactly 86400 SI seconds a day that has already gained about half a minute difference with solar time since 1970 (due to irregularities of the Earth rotation).
+
+As both np.datetime64 and np.timedelta64 have the same width, care must be taken with large timedeltas:
+
+.. code:: python
+
+        >>> np.datetime64('2262-01-01', 'ns') - np.datetime64('1678-01-01', 'ns')
+        numpy.timedelta64(-17537673709551616,'ns')
+
+Also note that all the times in np.datetime64 are 'naive': they are not aware of daylight saving and are not capable of being converted from one timezone to another. So it is not a replacement for datetime + `pytz <http://pytz.sourceforge.net/>`_ , rather a complement to it.
 
 
 ***********************
 6. Combinations thereof
 ***********************
 
-A structured array is an array with a custom dtype made from the types described above as the basic building blocks. Typical example is an RGB pixel color: a 4 bytes long type, in which the colors can be accessed by name: 
+A structured array is an array with a custom dtype made from the types described above as the basic building blocks (akin to enum in C). Typical example is an RGB pixel color: a 4 bytes long type, in which the colors can be accessed by name: 
 
 .. code:: python
 
@@ -338,8 +460,18 @@ To be able to access the fields as attributes, a recarray can be used:
                   dtype=[('x', 'u1'), ('y', 'u1'), ('z', 'u1')])
         
 Here it works like reinterpret_cast in C++, but sure enough, recarray can be created on its own, without being a view of something else.
+
 Types for structured dtypes do not necessarily need to be homogenic and can even
 include subarrays.
+
+With structured arrays and recarrays can get the 'look and feel' of a basic Pandas DataFrame: |br|
+|_| |_| |_| – you can address columns by names, |br|
+|_| |_| |_| – do some arithmetic and statistic calculations with them, |br|
+|_| |_| |_| – some operations are faster in NumPy than in Pandas |br|
+but they lack:|br|
+|_| |_| |_| – grouping (except what is offered by itertools.groupby) |br|
+|_| |_| |_| – the mighty Pandas Index and MultiIndex (so no pivot tables) and |br|
+|_| |_| |_| – other niceties like convenient sorting, etc.
 
 **************
 7. Type Checks
@@ -385,7 +517,7 @@ and in operator for checking against a group of types:
         >>> x.dtype in (np.half, np.single, np.double, np.longdouble)
         False
 
-But for more sophisticated types like `np.str_` or `np.datetime64` it doesn’t.
+But for more sophisticated types like `np.str_` or `np.datetime64` they don’t.
 
 The recommended way [5] of checking the dtype against the abstract types is
 
@@ -396,7 +528,16 @@ The recommended way [5] of checking the dtype against the abstract types is
         >>> np.issubdtype(a.dtype, np.floating)
         False
 
-It works with all native NumPy types, but the necessity of this method looks somewhat non-obvious: what’s wrong with good oldisinstance? Obviously the complexity of dtypes inheritance structure (they are constructed ‘on the fly’!) didn’t allow to do it according to principle of the least astonishment.
+It works with all native NumPy types, but the necessity of this method looks somewhat non-obvious: what’s wrong with good oldisinstance? Obviously the complexity of dtypes inheritance structure (they are constructed ‘on the fly’!) didn’t allow to do it according to principle of least astonishment.
+
+If you have Pandas installed, its type checking tools work with NumPy dtypes, too:
+
+.. code:: python
+
+        >>> pd.api.types.is_integer_dtype(a.dtype)
+        True
+        >>> pd.api.types.is_float_dtype(a.dtype)
+        False
 
 Yet another method is to use (undocumented, but used in SciPy/NumPy code bases) np.typecodes dictionary. The tree it represents is way less branchy:
 
@@ -424,7 +565,10 @@ And the usage is like
 
 This approach looks more hackish yet less magical than issubdtype.
 
+
+**********
 References
+**********
 
 1. Ricky Reusser, `Half-Precision Floating-Point, Visualized <https://observablehq.com/@rreusser/half-precision-floating-point-visualized>`_
 
