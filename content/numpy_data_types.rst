@@ -8,17 +8,17 @@ A Comprehensive Guide to NumPy Data Types
 
 NumPy, one of the most popular Python libraries for both data science and scientific computing, is pretty omnivorous when it comes to data types: it can handle just everything.
 
-It has its own set of ‘native’ types which it is capable of processing at full speed but it can also work with pretty much anything known to Python.
+It has its own set of ‘native’ types which it is capable of processing at full speed, but it can also work with pretty much anything known to Python.
 
-The article consists of 7 parts:
+The article consists of seven parts:
 
-1. Integers
-2. Floats (including Fractions and Decimals)
-3. Bools
-4. Strings
-5. Datetimes
-6. Combinations thereof
-7. Type Checks
+`1. Integers`_ |br|
+`2. Floats`_ (including Fractions and Decimals) |br|
+`3. Bools`_ |br|
+`4. Strings`_  |br|
+`5. Datetimes`_ |br|
+`6. Combinations thereof`_ |br|
+`7. Type Checks`_
 
 ***********
 1. Integers
@@ -29,23 +29,23 @@ The integer types table in NumPy is absolutely trivial for anyone with minimal e
 .. image:: img/numpy-data-types/integers.png
   :alt: NumPy Integer Types
 
-Just like in C/C++, `u` stands for 'unsigned' and the number is the amount of bits used to store the variable in memory (eg int64 is a 8-bytes-wide signed integer).
+Just like in C/C++, `u` stands for 'unsigned' and the digits represent the number of bits used to store the variable in memory (eg int64 is a 8-bytes-wide signed integer).
 
 When you feed a Python int into NumPy, it gets converted into a native NumPy type called np.int32 (or np.int64 depending on the OS, Python version and the magnitude of the initializers):
 
 .. code:: python
 
         >>> np.array([1, 2, 3]).dtype      
-        dtype('int32')                   # int32 on windows, int64 on linux and macos
+        dtype('int32')                   # int32 on Windows, int64 on Linux and MacOS
 
 If you’re unhappy with the 'flavor' of the integer type that NumPy has chosen for you, you can specify one explicitly: np.array([1,2,3], np.uint8) or np.array([1,2,3], 'uint8').
 
-NumPy works best when the width of the array elements is fixed. It is faster and takes less memory, but unlike an ordinary Python int (that works in arbitrary precision arithmetic) the value will wrap when it crosses the maximum (or minimum) value for the corresponding data type:
+NumPy works best when the width of the array elements is fixed. It is faster and takes less memory, but unlike an ordinary Python int (that works in arbitrary precision arithmetic), the value will wrap when it crosses the maximum (or minimum) value for the corresponding data type:
 
 .. image:: img/numpy-data-types/int_wrapping.png
   :alt: Int Wrapping
 
-\* *Strictly speaking, the C standard defines this wraparound only for the unsigned integers; the overflow behavior for the signed integers is undefined and can’t be relied upon (in both C and NumPy). Signed integers are silently wrapped around now, but there’s no guarantee they always will.*
+\* *Strictly speaking, the C standard defines this wraparound only for unsigned integers; the overflow behavior for signed integers is undefined and can’t be relied upon (in both C and NumPy). Signed integers are silently wrapped around now, but there’s no guarantee they always will.*
 
 .. code:: python
 
@@ -63,7 +63,7 @@ NumPy works best when the width of the array elements is fixed. It is faster and
 
 \— not even a warning here!
 
-With scalars it is a different story: first NumPy tries it best to promote the value to a wider type, then, if there is none, fires the overflow warning (to avoid flooding the output with warnings—only once):
+With scalars, it is a different story: first NumPy tries its best to promote the value to a wider type, then, if there is none, fires the overflow warning (to avoid flooding the output with warnings—only once):
 
 .. code:: python
 
@@ -107,7 +107,7 @@ And yet some more exotic aliases:
 
 * `np.intp` is np.int32 on 32bit python but np.int64 on 64bit python, ≈ssize_t in C, used in Cython as a type for pointers.
 
-Occasionally it happens that some of the values in the array display anomalous behavior or missing and you want to process the array without deleting them (eg there's some valid data in other columns).
+Occasionally it happens that some values in the array display anomalous behavior or missing, and you want to process the array without deleting them (eg there's some valid data in other columns).
 
 You can't put None there because it doesn't fit in the consecutive np.int64 values and also because 1+None is an unsupported operation.
 
@@ -135,12 +135,12 @@ Finally, if for some reason you need arbitrary-precision integers (Python ints) 
 2. Floats
 *********
 
-As Python did not diverge from IEEE 754-standardized C double type, the floating type transition from Python to NumPy is pretty much hassle-free:
+As Python did not diverge from the IEEE 754-standardized C double type, the floating type transition from Python to NumPy is pretty much hassle-free:
 
 .. image:: img/numpy-data-types/floats.png
   :alt: NumPy Floating Types
 
-\* As reported by np.finfo(np.float<nn>).precision.Deending on what you mean it may be:  15* (`15 <https://en.cppreference.com/w/cpp/types/numeric_limits/digits10>`_) *or* ( `17 FLT_DECIMAL_DIG <https://en.cppreference.com/w/cpp/types/numeric_limits/max_digits10>`_) for np.float64, 6 or 9 for np.float32, etc.
+\* As reported by np.finfo(np.float<nn>).precision. Two alternative definitions give `15 <https://en.cppreference.com/w/cpp/types/numeric_limits/digits10>`_ and `17 <https://en.cppreference.com/w/cpp/types/numeric_limits/max_digits10>`_ for np.float64, 6 and 9 for np.float32, etc.
 
 ** As of today, np.float128 is Unix-only (not available on Windows).
 
@@ -158,8 +158,12 @@ Suppose you're calculating a sigmoid activation function of the array and one of
         RuntimeWarning: overflow encountered in exp
         array([inf])
 
-What this warning is trying to tell you is that NumPy is aware that mathematically speaking 1/(1+exp(-x)) should never be 0., but in this particular case due an overflow it is.
-Such warnings can be 'upgraded' to exceptions or silenced via the errstate or filterwarnings as described in the 'integers' section above - and maybe for this particular case that would be enough - but if you really want to get the exact value you can select a wider dtype:
+What this warning is trying to tell you is that NumPy is aware that mathematically speaking 1/(1+exp(-x)) can never be zero, but in this particular case due an overflow it is.
+
+.. image:: img/numpy-data-types/overflows.png
+  :alt: Overflows and underflows
+
+Such warnings can be 'promoted' to exceptions or silenced via the errstate or filterwarnings as described in the 'integers' section above - and maybe for this particular case that would be enough - but if you really want to get the exact value you can select a wider dtype:
 
 .. code:: python
 
@@ -183,7 +187,7 @@ Just like in pure Python, NumPy floats exactly represent integers—but only bel
 
 Also exactly representable are fractions like 0.5, 0.125, 0.875 where the denominator is a power of 2 (0.5=1/2, 0.125=1/8, 0.875 =7/8, etc).
 
-Any other denominator will result in a rounding error so that 0.1+0.2!=0.3. The standard approach of dealing with this problem is to compare them with a relative tolerance (to compare two non-zero arguments) and absolute tolerance (if one of the arguments is zero). For scalars it is handled by `math.isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0)`, for NumPy arrays there’s a vectorized version `np.isclose(a, b, rtol=1e-05, atol=1e-08)`. Note that the tolerance arguments have different names and defaults.
+Any other denominator will result in a rounding error so that 0.1+0.2!=0.3. The standard approach of dealing with this problem is to compare them with a relative tolerance (to compare two non-zero arguments) and absolute tolerance (if one of the arguments is zero). For scalars, it is handled by `math.isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0)`, for NumPy arrays there’s a vectorized version `np.isclose(a, b, rtol=1e-05, atol=1e-08)`. Note that the tolerance arguments have different names and defaults.
 
 For the financial data decimal.Decimal type is handy as it involves no tolerances at all:
 
@@ -197,7 +201,7 @@ For the financial data decimal.Decimal type is handy as it involves no tolerance
 
 But Decimal type is not a silver bullet: it also has rounding errors. The only problem it solves is the exact representation of decimal fractions that humans are so used to. Plus it doesn’t support anything more complicated than arithmetic operations and a square root and runs slower than floats.
 
-For pure mathematic calculations fractions.Fraction can be used:
+For pure mathematical calculations fractions.Fraction can be used:
 
 .. code:: python
 
@@ -213,7 +217,7 @@ It can represent any rational number, but pi and exp are out of luck )
 
 Both Decimal and Fraction are not native types for NumPy but it is capable of working with them with all the niceties like multi-dimensions and fancy indexing, albeit at the cost of slower processing speed than that of native ints or floats.
 
-Complex numbers are processed no differently than floats with extra convenience functions with intuitive names like np.real(z), np.imag(z), np.abs(z), np.angle(z) that work on both scalars and arrays as a whole. The only gotcha is that unlike pure Python complex, `np.complex_` does not work with integers:
+Complex numbers are treated the same way as floats. There are a couple of convenience functions with intuitive names like np.real(z), np.imag(z), np.abs(z), np.angle(z) that work on both scalars and arrays as a whole. The only difference from pure Python `complex` is that `np.complex_` does not work with integers:
 
 .. code:: python
 
@@ -327,7 +331,7 @@ This time the first array takes 124 bytes, the second one is the same 128 bytes 
 
 We see that `str_` is smaller again, yet for more diverse lengths str can take the win.
 
-As for the native `np.str_` and `np.bytes_` types, NumPy has a handful of common string operations mirroring str methods living in the np.char module that operate over the whole array:
+As for the native `np.str_` and `np.bytes_` types, NumPy has a handful of common string operations. They mirror Python's str methods, live in the np.char module and operate over the whole array:
 
 .. code:: python
 
@@ -350,30 +354,70 @@ According to my benchmarks, basic operations work somewhat faster with str than 
 5. Datetimes
 ****************
 
-NumPy introduces an interesting data type, similar to a POSIX timestamp (aka Unix time, the number of seconds since 1 Jan 1970) but capable of counting time with a configurable granularity—from years to attoseconds (an aspect in which other datetime libraries tend to rely on the underlying OS)—represented invariably by a single int64 number.
+NumPy introduces an interesting native data type for datetimes, similar to a POSIX timestamp (aka Unix time, the number of seconds since the midnight of 1 Jan 1970) but capable of counting time with a configurable granularity - from years to attoseconds - represented invariably by a single int64 number.
 
-Years granularity means ‘just count the years’ — no real improvement against storing years as an integer. Days granularity is the equivalent of Python’s datetime.date. Microseconds (or nanoseconds depending on the OS) is the equivalent of Python’s datetime.datetime. And everything below is unique to np.datetime64.
+.. figure:: img/numpy-data-types/granularities.png
+    :alt: Datetime64 granularities table
 
-When creating an array you choose if you are ok with the default microseconds or you insist on nanoseconds or what not and it’ll give you 2⁶³ equidistant moments measured in the corresponding units of time to either side of 1 Jan 1970.
+    Table from the official `docs <https://numpy.org/doc/stable/reference/arrays.datetime.html>`_
+
+* Years granularity means 'just count the years' - no real improvement against storing years as an integer. 
+* Days granularity is an equivalent of Python's datetime.date. 
+* Microseconds - of Python's datetime.datetime. 
+
+And everything below is unique to np.datetime64.
+
+When creating an instance of np.datetime64, NumPy chooses the most coarse granularity that can still hold such data:
 
 .. code:: python
 
-        >>> np.array([dt.utcnow()], dtype=np.datetime64)
-        array(['2021-12-24T18:14:00.403438'], dtype='datetime64[us]')
+        >>> np.datetime64('today')         # days granularity (in local time UTC+7)
+        numpy.datetime64('2021-12-25')
 
-        >>> np.array([dt.utcnow()], dtype='datetime64[ns]')   # us is too coarse for me!
-        array(['2021-12-24T18:14:00.403438000'], dtype='datetime64[ns]')
+        >>> np.datetime64('now')           # seconds granularity (in UTC)
+        numpy.datetime64('2021-12-24 18:14:00')
 
-As in pure python, np.datetime64 is accompained by np.timedelta64 (stored as a single np.int64) with the expectable arithmetic operators.
+        >>> np.datetime64(dt.utcnow())     # microsecond granularity
+        numpy.datetime64('2021-12-24 18:14:23.404438')
 
-For example, to calculate the number of seconds until the New Year
+        >>> np.datetime64('2021-12-24 18:14:23.404438123')   # nanosecond granularity
+        numpy.datetime64('2021-12-24 18:14:23.404438123')
+
+Note that the string initializer is not so lenient as in pd.to_datetime: it must be in this exact format or minimal variations thereof (see 'general principles' of ISO 8601 Wikipedia page).
+When creating an array you decide if you are ok with the granularity that NumPy has chosen for you or you insist on, say, nanoseconds or what not, and it'll give you 2⁶³ equidistant moments measured in the corresponding units of time to either side of 1 Jan 1970.
+
+.. code:: python
+
+    >>> np.datetime64(dt.utcnow(), 'datetime64[ns]')       # us is too coarse for me!
+    numpy.datetime64('2021-12-24 18:14:23.404438000', dtype='datetime64[ns]')
+
+It is possible to have a multiple of a base unit. For example, if you only need a precision of 0.1 sec, you don't necessarily need to store milliseconds:
+
+.. code:: python
+
+    >>> a = np.array([dt.utcnow()], dtype='datetime64[100ms]'); a
+    array(['2022-12-24T18:15:08.300'], dtype='datetime64[100ms]')
+
+    >>> a + 1
+    array(['2022-12-24T18:15:08.400'], dtype='datetime64[100ms]')
+
+To get a machine-readable representation of the dtype without parsing the string:
+    
+.. code:: python
+
+    >>> a[0].dtype
+    dtype('<M8[100ms]')
+    >>> np.datetime_data(a[0])
+    ('ms', 100)
+
+Just like in pure Python when you subtract one np.datetime64 from another you get a np.timedelta64 object (also represented as a single int64 with a configurable granularity). For example, to get the number of seconds until the New Year, 
 
 .. code:: python
 
         >>> z = np.datetime64('2022-01-01') - np.datetime64(dt.now()); z
         numpy.timedelta64(295345588878,'us')
 
-        >>> z.item()                 # getting an ordinary datetime
+        >>> z.item()     # constructing an ordinary timedelta, works with datetime64 too
         datetime.timedelta(3, 36353, 424753)
 
         >>> z.item().total_seconds()
@@ -386,14 +430,70 @@ Or if you don't care about the fractional part, simply
         >>> np.datetime64('2022-01-01') - np.datetime64(dt.now(), 's')
         numpy.timedelta64(295259,'s')
 
-The (official!) `Day of the Programmer <https://en.wikipedia.org/wiki/Day_of_the_Programmer>`_ in Russia is celebrated on the 256th day of the year:
+Once constructed there's not much you can do about the datetime or timedelta objects. For the sake of speed, the amount of available operations is kept to the bare minimum: only conversions and basic arithmetic. For example, there are no 'years' or 'days' helper methods. 
+To get a particular field from a datetime64/timedelta64 scalar you can convert it to a conventional datetime:
 
 .. code:: python
 
-        >>> np.datetime64('2022-01-01') + np.timedelta64(256, 'D')
-        numpy.datetime64('2022-09-14')
+        >>> np.datetime64('2021-12-24 18:14:23').item()
+        datetime.datetime(2021, 12, 24, 18, 14, 23, 000000)
+        >>> np.datetime64('2021-12-24 18:14:23').item().month
+        12
 
-Leap years are supported:
+For the arrays
+    
+.. code:: python
+
+        >>> a = np.arange(np.datetime64('2021-01-20'), 
+                          np.datetime64('2021-12-20'), 
+                          np.timedelta64(90, 'D')); a
+        array(['2021-01-20', '2021-04-20', '2021-07-19', '2021-10-17'],
+              dtype='datetime64[D]')
+
+you can either make conversions between np.datetime64 subtypes (faster)
+
+.. code:: python
+
+        >>> (a.astype('M8[M]') - a.astype('M8[Y]')).view(np.int64)
+        array([0, 3, 6, 9], dtype=int64)
+        
+or use Pandas (2-4 times slower):
+
+.. code:: python
+
+        >>> s = pd.DatetimeIndex(a); s            # or pd.to_datetime(a)
+        DatetimeIndex(['2021-01-20', '2021-04-20', '2021-07-19', '2021-10-17'], 
+                      dtype='datetime64[ns]', freq=None)
+        >>> s.month
+        Int64Index([1, 4, 7, 10], dtype='int64')
+
+Here's a useful `function <https://stackoverflow.com/questions/13648774/get-year-month-or-day-from-numpy-datetime64/56260054#56260054>`_ that decomposes a datetime64 array into an array of 7 integer columns (years, months, days, hours, minutes, seconds, microseconds):
+
+.. code:: python
+
+        def dt2cal(dt):
+            # allocate output 
+            out = np.empty(dt.shape + (7,), dtype="u4")
+            # decompose calendar floors
+            Y, M, D, h, m, s = [dt.astype(f"M8[{x}]") for x in "YMDhms"]
+            out[..., 0] = Y + 1970 # Gregorian Year
+            out[..., 1] = (M - Y) + 1 # month
+            out[..., 2] = (D - M) + 1 # dat
+            out[..., 3] = (dt - D).astype("m8[h]") # hour
+            out[..., 4] = (dt - h).astype("m8[m]") # minute
+            out[..., 5] = (dt - m).astype("m8[s]") # second
+            out[..., 6] = (dt - s).astype("m8[us]") # microsecond
+            return out
+
+        >>> dt2cal(a)
+        array([[2021,   12,   15,    9,    0,    0,    0],
+               [2021,   12,   18,    9,    0,    0,    0],
+               [2021,   12,   21,    9,    0,    0,    0],
+               [2021,   12,   24,    9,    0,    0,    0]], dtype=uint32)
+
+A couple of gotchas with datetimes:
+
+1. Even though leap years are supported,
 
 .. code:: python
 
@@ -401,30 +501,57 @@ Leap years are supported:
             np.array(['2020-02-01', '2022-02-01', '2024-02-01'], np.datetime64)
         array([29, 28, 29], dtype='timedelta64[D]')
 
-`Leap seconds <https://en.wikipedia.org/wiki/Leap_second>`_ are not:
+`Leap seconds <https://en.wikipedia.org/wiki/Leap_second>`_ (essential part of both UTC and ordinary wall time) are not:
 
 .. code:: python
 
-        >>> np.datetime64('2017-01-01')- np.datetime64('2016-12-31T23:59:00')
-        numpy.timedelta64(60,'s')
+        >>> np.datetime64('2016-12-31T23:59:60')
+        ValueError: Seconds out of range in datetime string "2016-12-31 12:59:60"
         
-To be fair, neither datetime.datetime nor pytz count them, either (although in general `it is possible <https://stackoverflow.com/questions/19332902/extract-historic-leap-seconds-from-tzdata>`_ with pytz). It looks as if only astropy `calculates <https://het.as.utexas.edu/HET/Software/Astropy-1.0/api/astropy.time.TimeGPS.html>`_ them correctly, others adhere to `proleptic Gregorian calendar <https://en.wikipedia.org/wiki/Proleptic_Gregorian_calendar>`_ with its exactly 86400 SI seconds a day that has already gained about half a minute difference with solar time since 1970 (due to irregularities of the Earth rotation).
+To be fair, neither datetime.datetime nor pytz count them, either (although in general `it is possible <https://stackoverflow.com/questions/19332902/extract-historic-leap-seconds-from-tzdata>`_ to extract info about leap seconds from pytz). time module supports them only formally (accepts 60th second, but incorrect intervals).
 
-As both np.datetime64 and np.timedelta64 have the same width, care must be taken with large timedeltas:
+It looks as if only `astropy <https://www.astropy.org/>`_ processes them correctly so far,
+
+.. code:: python
+
+        >>> from astropy.time import Time
+        >>> (Time('2017-01-01') - Time('2016-12-31 23:59')).sec
+        61.00000000001593
+
+others adhere to the `proleptic Gregorian calendar <https://en.wikipedia.org/wiki/Proleptic_Gregorian_calendar>`_ with its exactly 86400 SI seconds a day that has already gained about half a minute difference with the wall time since 1970 due to irregularities of the Earth rotation. 
+The practical implications of using this calendar are:
+– mistake when calculating intervals that include one or more leap seconds
+– exception when trying to construct a datetime64 from a timestamp taken during a leap second
+
+2. As both np.datetime64 and np.timedelta64 have the same width, care must be taken with large timedeltas:
 
 .. code:: python
 
         >>> np.datetime64('2262-01-01', 'ns') - np.datetime64('1678-01-01', 'ns')
         numpy.timedelta64(-17537673709551616,'ns')
 
-Also note that all the times in np.datetime64 are 'naive': they are not aware of daylight saving and are not capable of being converted from one timezone to another. So it is not a replacement for datetime + `pytz <http://pytz.sourceforge.net/>`_ , rather a complement to it.
+Finally, note that all the times in np.datetime64 are 'naive': they are not 'aware' of daylight saving (=>it is recommended to store all datetimes in UTC) and are not capable of being converted from one timezone to another (=>use pytz for timezone conversions):
 
+.. code:: python
+
+        >>> a = np.arange(np.datetime64('2022-01-01 12:00'),
+                        np.datetime64('2022-01-03 12:00'), 
+                        np.timedelta64(1, 'D'))
+
+        >>> np.datetime_as_string(a)
+        array(['2022-01-01T12:00', '2022-01-02T12:00'], dtype='<U35')
+
+        >>> np.datetime_as_string(a, timezone='local')
+        array(['2022-01-01T19:00+0700', '2022-01-02T19:00+0700'], dtype='<U39')
+
+        >>> np.datetime_as_string(a, timezone=pytz.timezone('US/Eastern'))
+        array(['2022-01-01T07:00-0500', '2022-01-02T07:00-0500'], dtype='<U39')
 
 ***********************
 6. Combinations thereof
 ***********************
 
-A structured array is an array with a custom dtype made from the types described above as the basic building blocks (akin to enum in C). Typical example is an RGB pixel color: a 4 bytes long type, in which the colors can be accessed by name: 
+A 'structured array' in NumPy is an array with a custom dtype made from the types described above as the basic building blocks (akin to struct in C). A typical example is an RGB pixel color: a 3 bytes long type (usually 4 for alignment), in which the colors can be accessed by name: 
 
 .. code:: python
 
@@ -473,6 +600,35 @@ but they lack:|br|
 |_| |_| |_| – the mighty Pandas Index and MultiIndex (so no pivot tables) and |br|
 |_| |_| |_| – other niceties like convenient sorting, etc.
 
+The gotcha here is that even though this syntax is convenient for addressing particular columns as a whole, neither structured arrays nor recarrays are something you'd want to use in the innermost loop of a compute-intensive code:
+
+.. code:: python
+
+        a = np.random.rand(100000, 2)
+
+        b = a.view(dtype=[('x', np.float64), ('y', np.float64)])
+
+        c = np.recarray(buf=a, shape=len(a), dtype=
+                        [('x', np.float64), ('y', np.float64)])
+
+        s1 = 0
+        for r in a:
+            s1 += (r[0]**2 + r[1]**2)**-1.5          # reference
+
+        s2 = 0
+        for r in b:
+            s2 += (r['x']**2 + r['y']**2)**-1.5      # 5x slower
+
+        s3 = 0
+        for r in c:
+            s3 += (r.x**2 + r.y**2)**-1.5            # 7x slower
+
+        S1 = np.sum((a[:, 0]**2 + a[:, 1]**2)**-1.5) # 20x faster  
+        S2 = np.sum((b['x']**2 + b['y']**2)**-1.5)   # same as S1 
+        S3 = np.sum((c.x**2 + c.y**2)**-1.5)         # same as S1
+
+*Note: profiling python code can sometimes be counter-intuitive: changing x**2 to x*x can make the code run 1.5 faster or slower depending on the nature of x.*
+
 **************
 7. Type Checks
 **************
@@ -486,7 +642,7 @@ One way to check NumPy array type is to run isinstance against its element:
         >>> isinstance(v, np.int32)    # might be np.int64 on a different OS
         True
 
-All the NumPy types are interconnected in an inheritance tree displayed in the top of the article (blue=abstract classes, green=numeric types, yellow=others) so instead of specifying a whole list of types like isinstance(v, [np.int32, np.int64, etc]) you can write more compact typechecks like
+All the NumPy types are interconnected in an inheritance tree displayed at the top of the article (blue=abstract classes, green=numeric types, yellow=others) so instead of specifying a whole list of types like isinstance(v, [np.int32, np.int64, etc]) you can write more compact typechecks like
 
 .. code:: python
 
@@ -539,7 +695,7 @@ If you have Pandas installed, its type checking tools work with NumPy dtypes, to
         >>> pd.api.types.is_float_dtype(a.dtype)
         False
 
-Yet another method is to use (undocumented, but used in SciPy/NumPy code bases) np.typecodes dictionary. The tree it represents is way less branchy:
+Yet another method is to use (undocumented, but used in SciPy/NumPy code bases, eg `here <https://github.com/numpy/numpy/blob/60b01f9c7bd6e992191f20b7f2d8fcdb13f3d474/numpy/polynomial/polyutils.py#L249>`_) np.typecodes dictionary. The tree it represents is way less branchy:
 
 .. code:: python
 
@@ -554,14 +710,18 @@ Yet another method is to use (undocumented, but used in SciPy/NumPy code bases) 
         'Datetime': 'Mm',
         'All': '?bhilqpBHILQPefdgFDGSUVOMm'}
 
-And the usage is like
+Its primary application is to generate arrays with specific dtypes for testing purposes, but it can also be used to distinguish between different groups of dtypes:
 
 .. code:: python
 
-        >>> a.dtype.kind in np.typecodes['AllInteger']
+        >>> a.dtype.char in np.typecodes['AllInteger']
         True
-        >>> a.dtype.kind in np.typecodes['Datetime']
+        >>> a.dtype.char in np.typecodes['Datetime']
         False
+
+*Note that using a.dtype.kind instead of a.dtype.char is a mistake: np.zeros(1, dtype=np.uint8).dtype.kind == 'u' is missing from np.typecodes while  <…>.char == 'B' is listed there.*
+
+One downside of this method is that bools, strings, bytes, objects, and voids ('?', 'U', 'S', 'O', and 'V', respectively) don't have dedicated keys in the dict.
 
 This approach looks more hackish yet less magical than issubdtype.
 
